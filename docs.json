@@ -18,7 +18,9 @@
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "development",
+              "guides/connect-gcp",
+              "guides/gcp-requirements"
             ]
           },
           {
