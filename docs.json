@@ -19,8 +19,7 @@
               "index",
               "quickstart",
               "development",
-              "guides/connect-gcp",
-              "guides/gcp-requirements"
+              "guides/connect-gcp"
             ]
           },
           {
