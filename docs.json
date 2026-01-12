@@ -14,56 +14,19 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting started",
+            "icon": "rocket",
+            "group": "Get started",
             "pages": [
               "index",
-              "quickstart",
-              "development",
-              "guides/connect-gcp"
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "icon": "plug",
+            "group": "Integrations",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "guides/connect-gcp",
+              "guides/connect-aws"
             ]
           }
         ]
@@ -72,9 +35,9 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://docs.yasu.cloud",
-          "icon": "book-open-cover"
+          "anchor": "Website",
+          "href": "https://yasu.cloud",
+          "icon": "globe"
         },
         {
           "anchor": "Blog",

@@ -1,0 +1,295 @@
+---
+title: "Connect AWS Account"
+description: "Complete guide to connect your AWS account to Yasu for cost analysis and optimization"
+icon: "aws"
+---
+
+Connect your **AWS account** to Yasu using our secure CloudFormation template. This one-click deployment creates a read-only IAM role that enables Yasu to analyze your cloud costs and provide optimization recommendations.
+
+## Prerequisites
+
+Before connecting your AWS account, ensure you have:
+
+- **Administrative access** to your AWS account (or permissions to create IAM roles and CloudFormation stacks)
+- **Cost Explorer enabled** in your AWS account
+- Access to the AWS Console
+
+<Info>
+**Security First:** Yasu uses a cross-account IAM role with read-only permissions. We cannot modify or delete any of your AWS resources.
+</Info>
+
+## Quick Setup via CloudFormation
+
+The fastest way to connect your AWS account is through our pre-configured CloudFormation template.
+
+<Steps>
+<Step title="Navigate to Integrations">
+
+1. Log in to your Yasu dashboard at [app.yasu.cloud](https://app.yasu.cloud)
+2. Go to **Settings** → **Integrations**
+3. Click **Connect AWS**
+
+</Step>
+
+<Step title="Deploy the CloudFormation Stack">
+
+You'll be redirected to AWS CloudFormation with our template pre-loaded.
+
+1. **Review the stack name** — A unique name is generated for you (e.g., `YasuIntegration-abc123`)
+2. **Review the parameters** — These are automatically filled in:
+   - `YasuCustomerId` — Your unique Yasu customer ID
+   - `YasuExternalId` — A secure token for cross-account access
+   - `BucketName` — S3 bucket for Cost and Usage Reports
+   - `ReportName` — Name for your AWS CUR report
+3. **Scroll to the bottom** and check the acknowledgment box:
+   > ☑️ I acknowledge that AWS CloudFormation might create IAM resources.
+4. Click **Create stack**
+
+<Warning>
+**Do not modify the parameters** — They are pre-configured to work with your Yasu account.
+</Warning>
+
+</Step>
+
+<Step title="Wait for Stack Creation">
+
+The CloudFormation stack typically completes in **2-3 minutes**. You can monitor the progress in the AWS Console:
+
+- **CREATE_IN_PROGRESS** — Stack is being created
+- **CREATE_COMPLETE** — Stack created successfully
+
+Once complete, Yasu automatically detects the connection and begins syncing your data.
+
+</Step>
+
+<Step title="Verify Connection in Yasu">
+
+Return to your Yasu dashboard. You should see:
+
+- ✅ **Connection status**: Active
+- ✅ **AWS Account ID**: Your connected account
+- ✅ **Data sync**: In progress
+
+<Check>
+Your first cost-saving insights will appear within **5-10 minutes** after connection.
+</Check>
+
+</Step>
+</Steps>
+
+## What the CloudFormation Template Creates
+
+Our template creates the following resources in your AWS account:
+
+### 1. Cross-Account IAM Role
+
+A read-only IAM role that allows Yasu to access your cost and resource data:
+
+```
+arn:aws:iam::YOUR-ACCOUNT-ID:role/YasuCostOptimizationRole
+```
+
+### 2. IAM Policy with Read-Only Permissions
+
+The role includes permissions to read:
+
+| Service | Permissions | Purpose |
+|---------|-------------|---------|
+| Cost Explorer | `ce:Get*`, `ce:List*` | Cost and usage data |
+| EC2 | `ec2:Describe*` | Instance, volume, and snapshot info |
+| RDS | `rds:Describe*` | Database instance details |
+| S3 | `s3:List*`, `s3:GetBucket*` | Storage bucket information |
+| Lambda | `lambda:List*`, `lambda:Get*` | Function configurations |
+| CloudWatch | `cloudwatch:GetMetricStatistics` | Utilization metrics |
+| Organizations | `organizations:Describe*`, `organizations:List*` | Account structure |
+| Trusted Advisor | `support:DescribeTrustedAdvisor*` | AWS recommendations |
+
+### 3. Cost and Usage Report (CUR)
+
+An S3 bucket and CUR configuration for detailed billing data:
+
+- **Bucket**: `yasu-cur-{unique-id}`
+- **Report granularity**: Daily
+- **Format**: Parquet (optimized for analysis)
+
+## Required IAM Permissions
+
+<Accordion title="View Full IAM Policy">
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ce:GetCostAndUsage",
+        "ce:GetDimensionValues",
+        "ce:GetReservationCoverage",
+        "ce:GetReservationPurchaseRecommendation",
+        "ce:GetReservationUtilization",
+        "ce:GetSavingsPlansUtilization",
+        "ce:GetUsageReport",
+        "ce:ListCostCategoryDefinitions",
+        "cur:DescribeReportDefinitions",
+        "organizations:DescribeOrganization",
+        "organizations:ListAccounts",
+        "ec2:DescribeInstances",
+        "ec2:DescribeReservedInstances",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeAddresses",
+        "ec2:DescribeImages",
+        "rds:DescribeDBInstances",
+        "rds:DescribeReservedDBInstances",
+        "lambda:ListFunctions",
+        "lambda:GetFunction",
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation",
+        "cloudwatch:GetMetricStatistics",
+        "support:DescribeTrustedAdvisorChecks",
+        "support:DescribeTrustedAdvisorCheckResult"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+</Accordion>
+
+## What Yasu Will Scan
+
+Once connected, Yasu analyzes your AWS environment for optimization opportunities:
+
+### Cost Optimization Insights
+
+- **Idle EC2 Instances** — Running instances with low CPU/network utilization
+- **Oversized Instances** — Instances that can be downsized based on usage patterns
+- **Unattached EBS Volumes** — Volumes not connected to any instance
+- **Old EBS Snapshots** — Snapshots older than retention policies
+- **Unused Elastic IPs** — Static IPs not associated with running resources
+- **Idle RDS Instances** — Databases with minimal connections or queries
+- **Underutilized Lambda** — Functions with excess memory allocation
+- **S3 Storage Classes** — Buckets that could benefit from lifecycle policies
+
+### Savings Opportunities
+
+- **Reserved Instance Coverage** — Recommendations for RI purchases
+- **Savings Plans** — Compute and EC2 Savings Plan opportunities
+- **Spot Instance Candidates** — Workloads suitable for Spot pricing
+
+## Data Sync Schedule
+
+| Data Type | Initial Sync | Ongoing Sync |
+|-----------|--------------|--------------|
+| Cost data | Last 12 months | Daily |
+| Resource inventory | Current state | Every 6 hours |
+| Utilization metrics | Last 14 days | Daily |
+| Recommendations | Within 24 hours | Weekly |
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Stack creation failed">
+
+**Common causes:**
+
+1. **Insufficient permissions** — Ensure you have `cloudformation:*`, `iam:*`, and `s3:*` permissions
+2. **S3 bucket name conflict** — The bucket name must be globally unique; try again to generate a new name
+3. **Service limits** — Check if you've hit IAM role limits
+
+**Solution:** Delete the failed stack and try the connection again from Yasu.
+
+</Accordion>
+
+<Accordion title="Connection shows as pending">
+
+**What to check:**
+
+1. Verify the CloudFormation stack status is `CREATE_COMPLETE`
+2. Check that the stack wasn't rolled back
+3. Ensure the callback URL is accessible (no VPN/firewall blocking)
+
+**Solution:** Wait 5 minutes, then refresh. If still pending, delete the stack and reconnect.
+
+</Accordion>
+
+<Accordion title="Missing cost data">
+
+**What to check:**
+
+1. **Cost Explorer is enabled** — Go to AWS Billing → Cost Explorer → Enable
+2. **Sufficient history** — Cost Explorer needs ~24 hours to populate after first enable
+3. **IAM permissions** — Verify the role has `ce:*` permissions
+
+**Solution:** Enable Cost Explorer if needed, then wait 24 hours for data to populate.
+
+</Accordion>
+
+<Accordion title="Incomplete resource scan">
+
+**What to check:**
+
+1. **Regional coverage** — Some resources may be in regions not yet scanned
+2. **API rate limits** — Large accounts may take longer to fully scan
+3. **Missing permissions** — Verify all Describe permissions are in place
+
+**Solution:** Wait for the full sync cycle (up to 6 hours for large accounts).
+
+</Accordion>
+</AccordionGroup>
+
+## Connecting Multiple AWS Accounts
+
+If you have multiple AWS accounts (e.g., production, staging, development), you can connect each one:
+
+1. Go to **Settings** → **Integrations**
+2. Click **Connect AWS** for each additional account
+3. Deploy the CloudFormation stack in each account
+
+<Tip>
+**AWS Organizations:** If you use AWS Organizations, connect the management account first for organization-wide visibility.
+</Tip>
+
+## Security & Compliance
+
+<CardGroup cols={2}>
+<Card title="Read-Only Access" icon="lock">
+  Yasu cannot modify, create, or delete any AWS resources.
+</Card>
+<Card title="Secure Cross-Account" icon="shield">
+  Uses AWS-recommended external ID pattern for secure role assumption.
+</Card>
+<Card title="Data Encryption" icon="key">
+  All data encrypted in transit (TLS 1.2+) and at rest (AES-256).
+</Card>
+<Card title="Audit Trail" icon="clipboard-list">
+  All API calls logged in your AWS CloudTrail.
+</Card>
+</CardGroup>
+
+### Revoking Access
+
+To disconnect Yasu from your AWS account:
+
+1. Go to AWS CloudFormation
+2. Find and delete the `YasuIntegration-*` stack
+3. The IAM role and associated resources will be automatically removed
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Explore Dashboard" icon="chart-pie" href="/dashboard">
+  View your cost breakdown and spending trends.
+</Card>
+<Card title="Review Quick Wins" icon="lightbulb" href="/insights">
+  Start implementing AI-powered savings recommendations.
+</Card>
+<Card title="Connect GCP" icon="google" href="/guides/connect-gcp">
+  Add your Google Cloud accounts for multi-cloud visibility.
+</Card>
+<Card title="Set Up Alerts" icon="bell" href="/alerts">
+  Configure notifications for cost anomalies.
+</Card>
+</CardGroup>
