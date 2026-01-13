@@ -3,7 +3,7 @@ title: "Quickstart"
 description: "Get started with Yasu and start saving on cloud costs in minutes"
 ---
 
-## Get started in two steps
+## Get started in five steps
 
 Connect your cloud accounts and start receiving cost-saving insights right away.
 
@@ -14,26 +14,34 @@ Connect your cloud accounts and start receiving cost-saving insights right away.
     You can sign up with your email or use Google/GitHub SSO for faster onboarding.
 
     After signing up, you'll be prompted to create your first **workspace**. A workspace is where your team collaborates on cloud cost optimization.
-
-    <Tip>When onboarding you can invite **Team members** in the last step.</Tip>
   </Step>
 
   <Step title="Connect your cloud account">
-    Once you're in your workspace, connect your cloud provider to start analyzing your costs.
+    Select your cloud provider to start analyzing your costs.
+
     <img src="images/onboarding/onboarding_select_cloud.jpg" />
+
     <Tabs>
       <Tab title="AWS">
         **Connect AWS via CloudFormation**
 
-        1. Navigate to **Integrations** in the sidebar
-        2. Click **Connect AWS**
-        3. You'll be redirected to AWS CloudFormation to deploy a read-only IAM role
-        4. Review the permissions and click **Create Stack**
-        5. Once the stack is created, Yasu will automatically detect the connection
+        Click **Connect AWS** and you'll be redirected to AWS CloudFormation with our template pre-loaded.
+
+        <img src="images/onboarding/connect_aws.jpg" />
+
+        1. Review the stack name and parameters (pre-filled for you)
+        2. Scroll to the bottom and check the acknowledgment box
+        3. Click **Create Stack**
 
         <Info>
         Yasu uses **read-only access** to analyze your AWS costs and resources. We never make changes to your infrastructure.
         </Info>
+
+        **Verify the connection**
+
+        Once the CloudFormation stack completes, Yasu automatically detects the connection. You'll see the verification screen:
+
+        <img src="images/onboarding/connect_aws_verify.jpg" />
 
         The CloudFormation template creates an IAM role with permissions to:
         - Read Cost Explorer data
@@ -44,11 +52,13 @@ Connect your cloud accounts and start receiving cost-saving insights right away.
       <Tab title="GCP">
         **Connect GCP via OAuth**
 
-        1. Navigate to **Integrations** in the sidebar
-        2. Click **Connect GCP**
-        3. Sign in with your Google account that has access to the GCP project
-        4. Select the project(s) you want to connect
-        5. Grant the required permissions
+        Click **Connect GCP** to start the OAuth flow.
+
+        <img src="images/onboarding/connect_gcp.jpg" />
+
+        1. Sign in with your Google account that has access to the GCP project
+        2. Select the project(s) you want to connect
+        3. Grant the required permissions
 
         <Info>
         Yasu requests **read-only access** to your GCP billing and resource data. We never make changes to your infrastructure.
@@ -61,19 +71,48 @@ Connect your cloud accounts and start receiving cost-saving insights right away.
       </Tab>
     </Tabs>
   </Step>
+
+  <Step title="Start your AI agents">
+    After connecting your cloud account, configure which AI agents you want to activate. These agents continuously analyze your infrastructure for cost-saving opportunities.
+
+    <img src="images/onboarding/connect_aws_agents.jpg" />
+
+    Select the agents that match your optimization goals:
+    - **Cost Analyzer** — Identifies idle and underutilized resources
+    - **Right-Sizing Agent** — Recommends optimal instance sizes
+    - **Reserved Instance Advisor** — Finds RI and Savings Plan opportunities
+
+    <Tip>You can enable or disable agents at any time from Settings.</Tip>
+  </Step>
+
+  <Step title="Invite your team">
+    Collaborate with your team by inviting members to your workspace.
+
+    <img src="images/onboarding/onboarding_invite_team.jpg" />
+
+    Enter email addresses of team members you want to invite. They'll receive an invitation to join your Yasu workspace.
+
+    <Info>
+    You can manage team members and permissions later from **Settings** → **Members**.
+    </Info>
+  </Step>
+
+  <Step title="See your insights">
+    Once setup is complete, you'll land on your dashboard where cost-saving insights start appearing.
+
+    <img src="images/ui/dashboard.jpg" />
+
+    Your dashboard shows:
+    - **Current spend** — Real-time cloud cost tracking
+    - **Quick Wins** — AI-powered savings recommendations
+    - **Forecast** — Predicted costs for the coming month
+    - **Services breakdown** — Costs by cloud service
+
+    <Check>
+    Most users see their first cost-saving recommendations within **5 minutes** of connecting.
+    </Check>
+  </Step>
 </Steps>
-
-## What happens next?
-
-Once connected, Yasu immediately starts analyzing your cloud environment:
-
-1. **Cost data syncs** — Your historical cost data is imported (this may take a few minutes)
-2. **AI analysis begins** — Our agents scan for optimization opportunities
-3. **Insights appear** — You'll see your first Quick Wins on the dashboard
-
-<Check>
-Most users see their first cost-saving recommendations within **5 minutes** of connecting.
-</Check>
 
 ## Next steps
 
