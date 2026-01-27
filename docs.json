@@ -25,8 +25,15 @@
             "icon": "plug",
             "group": "Integrations",
             "pages": [
+              "guides/connect-aws",
               "guides/connect-gcp",
-              "guides/connect-aws"
+              {
+                "group": "Connect Azure",
+                "icon": "microsoft",
+                "pages": [
+                  "guides/connect-azure"
+                ]
+              }
             ]
           }
         ]

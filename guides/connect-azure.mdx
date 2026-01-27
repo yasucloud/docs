@@ -1,0 +1,365 @@
+---
+title: "Connect Azure Account"
+description: "Complete guide to connect your Microsoft Azure account to Yasu for cost analysis and optimization"
+icon: "microsoft"
+---
+
+Connect your **Azure account** to Yasu by creating a Service Principal with read-only permissions. This enables Yasu to analyze your cloud costs and provide optimization recommendations.
+
+<Info>
+**Security First:** Yasu uses a Service Principal with read-only permissions. We cannot modify, create, or delete any Azure resources.
+</Info>
+
+## Subscription-Level Setup (All Billing Account Types)
+
+This guide covers connecting Azure subscriptions to Yasu using subscription-level RBAC roles. This setup method works for **all Azure billing account types**, including:
+
+- **Pay as You Go** (Individual subscriptions)
+- **Microsoft Customer Agreement (MCA)**
+- **Enterprise Agreement (EA)**
+- **Azure Cloud Solution Provider (CSP)**
+
+<Info>
+**Universal Setup:** Subscription-level RBAC roles provide access to cost data and resources for all billing account types. Simply create a Service Principal and assign roles at the subscription scope - no billing account ID or enrollment number is required.
+</Info>
+
+{/* ### Advanced Setup Options
+
+If you need organization-wide cost visibility or billing account-level access, you can use these advanced setup guides:
+
+<CardGroup cols={3}>
+<Card title="Microsoft Customer Agreement (MCA)" href="/guides/connect-azure-mca" icon="microsoft">
+  For billing account-level access across all subscriptions in an MCA account.
+</Card>
+
+<Card title="Enterprise Agreement (EA)" href="/guides/connect-azure-ea" icon="tag">
+  For enrollment-level access across all departments and accounts in an EA.
+</Card>
+
+<Card title="Azure Cloud Solution Provider (CSP)" href="/guides/connect-azure-csp" icon="users">
+  For partner-level access to customer subscriptions in CSP accounts.
+</Card>
+</CardGroup>
+
+<Tip>
+**Most users:** The subscription-level setup on this page is sufficient for most use cases. Only use the advanced guides above if you need organization-wide or billing account-level access.
+</Tip>
+*/}
+
+## Prerequisites
+
+Before connecting your Azure account, ensure you have:
+
+- **Administrative access** to your Azure subscription (or permissions to create Service Principals and assign RBAC roles)
+- **Subscription Owner or User Access Administrator** role to assign permissions
+- Access to Azure Portal or Azure CLI
+- PowerShell or Azure CLI installed (for automated setup)
+
+## Quick Setup via PowerShell Script
+
+The fastest way to connect your Azure account is through our automated PowerShell script.
+
+<Steps>
+<Step title="Navigate to Integrations">
+
+1. Log in to your Yasu dashboard at [app.yasu.cloud](https://app.yasu.cloud)
+2. Go to **Settings** → **Integrations**
+3. Click **Connect Azure**
+
+</Step>
+
+<Step title="Download and Run Setup Script">
+
+You'll see a PowerShell script that you can copy and run in Azure Cloud Shell or your local PowerShell environment.
+
+1. **Copy the script** from the Yasu dashboard
+2. **Open Azure Cloud Shell** (recommended) or PowerShell with Azure module installed
+3. **Paste and run the script**
+
+The script will:
+- Create a Service Principal named `yasu-cost-optimizer-{your-account-id}`
+- Assign required RBAC roles (Reader, Cost Management Reader, Monitoring Reader)
+- Output your connection credentials
+
+<Warning>
+**Important:** Save the credentials securely. The client secret will only be shown once.
+</Warning>
+
+</Step>
+
+<Step title="Enter Credentials in Yasu">
+
+After running the script, you'll receive:
+
+- **Tenant ID** (Directory ID)
+- **Subscription ID**
+- **Client ID** (Application ID)
+- **Client Secret**
+
+Enter these credentials in the Yasu dashboard:
+
+1. Return to **Settings** → **Integrations** → **Connect Azure**
+2. Fill in the credential fields:
+   - Tenant ID
+   - Subscription ID
+   - Client ID (Application ID)
+   - Client Secret
+3. Click **Connect Account**
+
+</Step>
+
+<Step title="Wait for Verification">
+
+Yasu will automatically verify your connection:
+
+- ✅ **Authentication test** - Verifies Service Principal credentials
+- ✅ **Permission check** - Confirms required roles are assigned
+- ✅ **Subscription access** - Validates subscription access
+- ✅ **Cost Management access** - Tests cost data access
+
+This typically takes **1-2 minutes**.
+
+</Step>
+
+<Step title="Verify Connection Status">
+
+Return to your Yasu dashboard. You should see:
+
+- ✅ **Connection status**: Active
+- ✅ **Subscription Name**: Your Azure subscription name
+- ✅ **Data sync**: In progress
+
+<Check>
+Your first cost-saving insights will appear within **5-10 minutes** after connection.
+</Check>
+
+</Step>
+</Steps>
+
+## Manual Setup via Azure Portal
+
+If you prefer to set up the Service Principal manually through the Azure Portal:
+
+<Steps>
+<Step title="Create Application Registration">
+
+1. Navigate to **Azure Portal** → **Microsoft Entra ID** (Azure Active Directory)
+2. Go to **App registrations** → **+ New registration**
+3. Set **Name**: `yasu-cost-optimizer-{your-account-id}`
+4. Select **Accounts in this organizational directory only**
+5. Click **Register**
+6. **Copy the following values** (you'll need them later):
+   - **Application (client) ID**
+   - **Directory (tenant) ID**
+
+</Step>
+
+<Step title="Generate Client Secret">
+
+1. In the app registration, go to **Certificates &amp; secrets**
+2. Click **+ New client secret**
+3. Enter a **Description**: `Yasu Access Key`
+4. Select **Expires**: Choose **24 months** (recommended)
+5. Click **Add**
+6. **Copy the secret Value immediately** - it won't be shown again
+
+<Warning>
+**Important:** If this secret expires, you'll need to create a new one and update it in Yasu before expiration. Set a reminder for 30 days before expiration.
+</Warning>
+
+</Step>
+
+<Step title="Assign RBAC Roles">
+
+The Service Principal needs the following roles at the **Subscription** scope:
+
+1. Navigate to **Subscriptions** → Select your subscription
+2. Go to **Access control (IAM)** → **+ Add** → **Add role assignment**
+3. Assign each role one by one:
+
+   **Role 1: Reader**
+   - **Role**: Select **Reader**
+   - **Assign access to**: User, group, or service principal
+   - **Select members**: Search for and select your `yasu-cost-optimizer-*` app
+   - Click **Review + assign**
+
+   **Role 2: Cost Management Reader**
+   - Repeat the process with **Cost Management Reader** role
+
+   **Role 3: Monitoring Reader**
+   - Repeat the process with **Monitoring Reader** role
+
+<Note>
+Role assignments may take up to 5 minutes to propagate. Wait a few minutes before testing the connection.
+</Note>
+
+</Step>
+
+<Step title="Complete Connection in Yasu">
+
+1. Return to **Settings** → **Integrations** → **Connect Azure** in Yasu
+2. Enter the credentials:
+   - **Tenant ID**: Directory (tenant) ID from Step 1
+   - **Subscription ID**: Your Azure subscription ID
+   - **Client ID**: Application (client) ID from Step 1
+   - **Client Secret**: The secret value from Step 2
+3. Click **Connect Account**
+
+</Step>
+</Steps>
+
+## What the Service Principal Needs
+
+The Service Principal is granted the following **read-only** RBAC roles at the subscription scope:
+
+| Role | Purpose | Permissions |
+|------|---------|-------------|
+| **Reader** | Read all Azure resources | `*/read` |
+| **Cost Management Reader** | Access cost and billing data | `Microsoft.Consumption/*/read`, `Microsoft.CostManagement/*/read` |
+| **Monitoring Reader** | Access metrics and monitoring data | `Microsoft.Insights/*/read`, `Microsoft.OperationalInsights/*/read` |
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Authentication failed">
+
+**Common causes:**
+
+1. **Wrong tenant ID** - Verify you're using the correct Directory (tenant) ID
+2. **Wrong client ID** - Check the Application (client) ID matches your app registration
+3. **Wrong client secret** - The secret may have expired or been regenerated
+4. **Secret expired** - Create a new client secret and update it in Yasu
+
+**Solution:**
+
+```powershell
+# Verify credentials work
+az login --service-principal \
+  --username {client-id} \
+  --password {client-secret} \
+  --tenant {tenant-id}
+
+# If failed, reset credentials
+az ad app credential reset --id {client-id}
+```
+
+</Accordion>
+
+<Accordion title="Access denied or insufficient permissions">
+
+**What to check:**
+
+1. **Missing role assignments** - Verify all three roles are assigned (Reader, Cost Management Reader, Monitoring Reader)
+2. **Role propagation delay** - Azure role assignments can take up to 5 minutes to propagate
+3. **Wrong scope** - Ensure roles are assigned at the Subscription level, not Resource Group level
+
+**Solution:**
+
+```powershell
+# Check current role assignments
+az role assignment list --assignee {client-id} --all
+
+# Add missing role
+az role assignment create \
+  --assignee {client-id} \
+  --role "Cost Management Reader" \
+  --scope "/subscriptions/{subscription-id}"
+
+# Wait 5 minutes for propagation
+```
+
+</Accordion>
+
+<Accordion title="Subscription not found">
+
+**What to check:**
+
+1. **Wrong subscription ID** - Verify the subscription ID is correct
+2. **Service Principal not granted access** - The SP needs Reader role at subscription scope
+3. **Subscription disabled** - Check subscription state in Azure Portal
+
+**Solution:**
+
+```powershell
+# List available subscriptions
+az account list --output table
+
+# Verify subscription exists and is enabled
+az account show --subscription {subscription-id}
+
+# Grant access to subscription
+az role assignment create \
+  --assignee {client-id} \
+  --role "Reader" \
+  --scope "/subscriptions/{subscription-id}"
+```
+
+</Accordion>
+
+<Accordion title="Missing cost data">
+
+**What to check:**
+
+1. **Cost Management API access** - Verify Cost Management Reader role is assigned at subscription scope
+2. **Data delay** - Cost data may take 24-48 hours to appear after first connection
+3. **Subscription billing** - Ensure the subscription has active billing and resources
+
+**Solution:**
+
+- Verify Cost Management Reader role is assigned at the subscription level
+- Wait 24-48 hours for initial cost data sync
+- Check that the subscription has incurred charges (not in free/trial period)
+- For organization-wide cost visibility, consider using the MCA/EA/CSP setup guides
+
+</Accordion>
+
+<Accordion title="Rate limiting (429 errors)">
+
+**What it means:** Too many API calls in a short time period.
+
+**Solution:**
+
+- Yasu automatically implements exponential backoff
+- Large subscriptions may take longer to fully scan
+- Wait for the full sync cycle (up to 6 hours for large subscriptions)
+
+</Accordion>
+
+<Accordion title="Client secret expiration">
+
+**What to do:**
+
+1. Create a new client secret in Azure Portal (App Registration → Certificates &amp; secrets)
+2. Update the secret in Yasu before the old one expires:
+   - Go to **Settings** → **Integrations** → Your Azure connection
+   - Click **Update Client Secret**
+   - Enter the new secret value
+   - Save changes
+
+<Warning>
+**Important:** Update the secret at least 30 days before expiration to avoid service interruption.
+</Warning>
+
+</Accordion>
+
+<Accordion title="Cost data delay">
+
+**What it means:** Cost data may take time to appear after connecting.
+
+**Common causes:**
+- Cost data typically takes 24-48 hours to appear after subscription creation
+- Cost Management API may require additional time for first-time access
+- Subscription may not have incurred any charges yet
+
+**Solution:**
+- Wait 24-48 hours after connecting for initial cost data sync
+- Verify the subscription has active resources and billing activity
+- Check that Cost Management Reader role is correctly assigned at subscription scope
+- Ensure the subscription is not in a trial or free tier period
+
+</Accordion>
+</AccordionGroup>
+
+## Done!
+
+That's it! You have successfully connected your Azure account to Yasu. Once verified, Yasu will start analyzing your Azure billing, resource usage, and performance metrics to provide optimization insights.

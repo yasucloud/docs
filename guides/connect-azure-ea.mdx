@@ -1,0 +1,186 @@
+---
+title: "Connect Azure EA Account"
+description: "Complete guide to connect your Enterprise Agreement (EA) Azure account to Yasu"
+icon: "microsoft"
+---
+
+Connect your **Enterprise Agreement (EA)** Azure account to Yasu by creating a Service Principal with enrollment reader permissions. This enables Yasu to access your cost data at the enrollment level.
+
+<Info>
+**EA Accounts:** With EA accounts, Yasu's Service Principal is granted **Enrollment Reader** permissions at the enrollment scope, allowing access to all departments, accounts, and subscriptions under the enrollment.
+</Info>
+
+## Prerequisites
+
+Before connecting your Azure EA account, ensure you have:
+
+- **Enterprise Administrator** or **Enrollment Administrator** role
+- Access to Azure Portal
+- Your **Enrollment Number** (found in EA Portal or Azure Portal)
+
+## Steps to Connect
+
+<Steps>
+<Step title="Create Application Registration">
+
+1. Navigate to **Azure Portal** → **Microsoft Entra ID** (Azure Active Directory)
+2. Go to **App registrations** → **+ New registration**
+3. Set **Name**: `yasu-cost-optimizer-{your-account-id}`
+4. Select **Accounts in this organizational directory only**
+5. Click **Register**
+6. **Copy the following values** (you'll need them later):
+   - **Application (client) ID**
+   - **Directory (tenant) ID**
+
+</Step>
+
+<Step title="Generate Client Secret">
+
+1. In the app registration, go to **Certificates & secrets**
+2. Click **+ New client secret**
+3. Enter a **Description**: `Yasu Access Key`
+4. Select **Expires**: Choose **24 months** (recommended)
+5. Click **Add**
+6. **Copy the secret Value immediately** — it won't be shown again
+
+<Warning>
+**Important:** Save this secret securely. You'll need it to complete the connection in Yasu.
+</Warning>
+
+</Step>
+
+<Step title="Obtain Your Enrollment Number">
+
+1. Navigate to **Azure Portal** → **Cost Management + Billing**
+2. Select your billing account
+3. Copy the **Enrollment Number** from the overview page
+   - Format: Usually a 6-digit number (e.g., `123456`)
+   - You can also find it in the EA Portal
+
+<Note>
+If you don't have access to the enrollment number, contact your Enterprise Administrator.
+</Note>
+
+</Step>
+
+<Step title="Assign Enrollment Reader Role">
+
+The Service Principal needs the **Enrollment Reader** role at the **Enrollment** scope:
+
+1. Navigate to **Cost Management + Billing** → Select your billing account
+2. Go to **Access control (IAM)** → **+ Add** → **Add role assignment**
+3. Select **Role**: **Enrollment Reader**
+4. Click **Next**
+5. For **Assign access to**, select **User, group, or service principal**
+6. Click **+ Select members**
+7. Search for and select your `yasu-cost-optimizer-*` app registration
+8. Click **Select**
+9. Click **Next** → **Review + assign**
+
+<Note>
+The Enrollment Reader role grants read access to enrollment data, including costs for all departments, accounts, and subscriptions under the enrollment.
+</Note>
+
+</Step>
+
+<Step title="Complete Connection in Yasu">
+
+1. In Yasu, navigate to **Settings** → **Integrations** → **Connect Azure**
+2. Select **Enterprise Agreement (EA)** as your billing account type
+3. Enter the following credentials:
+   - **Tenant ID**: Directory (tenant) ID from Step 1
+   - **Subscription ID**: One of your subscription IDs (for initial connection)
+   - **Client ID**: Application (client) ID from Step 1
+   - **Client Secret**: The secret value from Step 2
+   - **Enrollment Number**: The enrollment number from Step 3
+4. Click **Connect Account**
+
+Yasu will verify:
+- Service Principal authentication
+- Enrollment Reader role assignment
+- Access to enrollment data
+- Subscription access
+
+</Step>
+</Steps>
+
+## What's Different for EA Accounts?
+
+With EA accounts, Yasu:
+
+- ✅ Accesses cost data at the **enrollment level** (organization-wide)
+- ✅ Can see costs for **all departments, accounts, and subscriptions**
+- ✅ Uses **Enrollment Reader** role instead of subscription-level roles
+- ✅ Provides **enterprise-wide cost visibility**
+- ✅ Supports **department and account-level** cost breakdowns
+
+## Verification Steps
+
+After connecting, Yasu will perform the following checks:
+
+1. **Service Principal Authentication**
+   - Verifies credentials are valid
+   - Tests authentication with Azure AD
+
+2. **Enrollment Access**
+   - Verifies Enrollment Reader role is assigned
+   - Tests access to enrollment data
+
+3. **Subscription Access**
+   - Verifies access to subscriptions under the enrollment
+   - Tests resource reading permissions
+
+4. **Cost Data Collection**
+   - Begins collecting enrollment-level billing data
+   - Initializes cost analysis across departments and accounts
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Enrollment Reader role not found">
+
+**What it means:** You may not have permissions to assign roles at the enrollment level.
+
+**Fix:**
+1. Ensure you have **Enterprise Administrator** or **Enrollment Administrator** role
+2. Contact your Enterprise Administrator to assign the role
+3. Verify you're assigning the role at the correct scope (Enrollment, not Subscription)
+
+</Accordion>
+
+<Accordion title="Cannot access enrollment">
+
+**What it means:** The Service Principal may not have access to the enrollment.
+
+**Fix:**
+1. Verify the Enrollment Reader role is assigned at the Enrollment scope
+2. Check that you're using the correct Enrollment Number
+3. Ensure the role assignment has propagated (wait 5 minutes)
+4. Verify you have the correct billing account selected
+
+</Accordion>
+
+<Accordion title="Missing department or account data">
+
+**What it means:** Some departments or accounts may not be visible if they're in a different enrollment.
+
+**Fix:**
+- Verify all departments and accounts are under the same enrollment
+- If you have multiple enrollments, connect each one separately in Yasu
+- Check department and account access permissions in EA Portal
+
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Once connected, Yasu will start analyzing costs across your entire EA enrollment. You can:
+
+- View enterprise-wide cost breakdowns
+- See costs by department and account
+- Get optimization recommendations for all resources
+- Set up cost alerts and budgets at enrollment level
+
+<Card title="Back to Azure Connection Guide" icon="arrow-left" href="/guides/connect-azure">
+  Return to the main Azure connection guide
+</Card>

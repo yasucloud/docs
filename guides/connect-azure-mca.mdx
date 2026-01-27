@@ -1,0 +1,179 @@
+---
+title: "Connect Azure MCA Account"
+description: "Complete guide to connect your Microsoft Customer Agreement (MCA) Azure account to Yasu"
+icon: "microsoft"
+---
+
+Connect your **Microsoft Customer Agreement (MCA)** Azure account to Yasu by creating a Service Principal with billing account reader permissions. This enables Yasu to access your cost data at the billing account level.
+
+<Info>
+**MCA Accounts:** With MCA accounts, Yasu's Service Principal is granted **Billing Account Reader** permissions at the billing scope level, allowing access to all subscriptions under the billing account.
+</Info>
+
+## Prerequisites
+
+Before connecting your Azure MCA account, ensure you have:
+
+- **Billing Account Administrator** or **Billing Account Contributor** role
+- Access to Azure Portal
+- Your **Billing Account ID** (found in Azure Portal → Cost Management + Billing)
+
+## Steps to Connect
+
+<Steps>
+<Step title="Create Application Registration">
+
+1. Navigate to **Azure Portal** → **Microsoft Entra ID** (Azure Active Directory)
+2. Go to **App registrations** → **+ New registration**
+3. Set **Name**: `yasu-cost-optimizer-{your-account-id}`
+4. Select **Accounts in this organizational directory only**
+5. Click **Register**
+6. **Copy the following values** (you'll need them later):
+   - **Application (client) ID**
+   - **Directory (tenant) ID**
+
+</Step>
+
+<Step title="Generate Client Secret">
+
+1. In the app registration, go to **Certificates & secrets**
+2. Click **+ New client secret**
+3. Enter a **Description**: `Yasu Access Key`
+4. Select **Expires**: Choose **24 months** (recommended)
+5. Click **Add**
+6. **Copy the secret Value immediately** — it won't be shown again
+
+<Warning>
+**Important:** Save this secret securely. You'll need it to complete the connection in Yasu.
+</Warning>
+
+</Step>
+
+<Step title="Obtain Your Billing Account ID">
+
+1. Navigate to **Azure Portal** → **Cost Management + Billing**
+2. Select your billing account
+3. Copy the **Billing Account ID** from the overview page
+   - Format: Usually starts with a number (e.g., `12345678-1234-1234-1234-123456789012`)
+   - You can also find it in the URL: `https://portal.azure.com/#blade/Microsoft_Azure_Billing/ModernBillingMenuBlade/Overview/billingAccountId/...`
+
+</Step>
+
+<Step title="Assign Billing Account Reader Role">
+
+The Service Principal needs the **Billing Account Reader** role at the **Billing Account** scope:
+
+1. Navigate to **Cost Management + Billing** → Select your billing account
+2. Go to **Access control (IAM)** → **+ Add** → **Add role assignment**
+3. Select **Role**: **Billing Account Reader**
+4. Click **Next**
+5. For **Assign access to**, select **User, group, or service principal**
+6. Click **+ Select members**
+7. Search for and select your `yasu-cost-optimizer-*` app registration
+8. Click **Select**
+9. Click **Next** → **Review + assign**
+
+<Note>
+The Billing Account Reader role grants read access to billing data for all subscriptions under this billing account.
+</Note>
+
+</Step>
+
+<Step title="Complete Connection in Yasu">
+
+1. In Yasu, navigate to **Settings** → **Integrations** → **Connect Azure**
+2. Select **Microsoft Customer Agreement (MCA)** as your billing account type
+3. Enter the following credentials:
+   - **Tenant ID**: Directory (tenant) ID from Step 1
+   - **Subscription ID**: One of your subscription IDs (for initial connection)
+   - **Client ID**: Application (client) ID from Step 1
+   - **Client Secret**: The secret value from Step 2
+   - **Billing Account ID**: The billing account ID from Step 3
+4. Click **Connect Account**
+
+Yasu will verify:
+- Service Principal authentication
+- Billing Account Reader role assignment
+- Access to billing data
+- Subscription access
+
+</Step>
+</Steps>
+
+## What's Different for MCA Accounts?
+
+With MCA accounts, Yasu:
+
+- ✅ Accesses cost data at the **billing account level** (not just subscription level)
+- ✅ Can see costs for **all subscriptions** under the billing account
+- ✅ Uses **Billing Account Reader** role instead of subscription-level roles
+- ✅ Provides **organization-wide cost visibility**
+
+## Verification Steps
+
+After connecting, Yasu will perform the following checks:
+
+1. **Service Principal Authentication**
+   - Verifies credentials are valid
+   - Tests authentication with Azure AD
+
+2. **Billing Account Access**
+   - Verifies Billing Account Reader role is assigned
+   - Tests access to billing account data
+
+3. **Subscription Access**
+   - Verifies access to subscriptions under the billing account
+   - Tests resource reading permissions
+
+4. **Cost Data Collection**
+   - Begins collecting billing data from all subscriptions
+   - Initializes cost analysis
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Billing Account Reader role not found">
+
+**What it means:** You may not have permissions to assign roles at the billing account level.
+
+**Fix:**
+1. Ensure you have **Billing Account Administrator** or **Billing Account Contributor** role
+2. Contact your Azure administrator to assign the role
+3. Verify you're assigning the role at the correct scope (Billing Account, not Subscription)
+
+</Accordion>
+
+<Accordion title="Cannot access billing account">
+
+**What it means:** The Service Principal may not have access to the billing account.
+
+**Fix:**
+1. Verify the Billing Account Reader role is assigned at the Billing Account scope
+2. Check that you're using the correct Billing Account ID
+3. Ensure the role assignment has propagated (wait 5 minutes)
+
+</Accordion>
+
+<Accordion title="Missing subscription data">
+
+**What it means:** Some subscriptions may not be visible if they're in a different billing account.
+
+**Fix:**
+- Verify all subscriptions are under the same billing account
+- If you have multiple billing accounts, connect each one separately in Yasu
+
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Once connected, Yasu will start analyzing costs across all subscriptions in your MCA billing account. You can:
+
+- View organization-wide cost breakdowns
+- See cost trends across all subscriptions
+- Get optimization recommendations for all resources
+- Set up cost alerts and budgets
+
+<Card title="Back to Azure Connection Guide" icon="arrow-left" href="/guides/connect-azure">
+  Return to the main Azure connection guide
+</Card>
