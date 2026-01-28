@@ -1,0 +1,238 @@
+---
+title: "Connect Azure CSP Account"
+description: "Complete guide to connect your Cloud Solution Provider (CSP) Azure account to Yasu"
+icon: "microsoft"
+---
+
+Connect your **Azure Cloud Solution Provider (CSP)** account to Yasu by creating a Service Principal with appropriate permissions. CSP accounts require special handling due to the partner-customer relationship structure.
+
+<Info>
+**CSP Accounts:** CSP accounts have a unique structure where partners manage customer subscriptions. Yasu connects to your partner tenant to access customer billing data.
+</Info>
+
+## Prerequisites
+
+Before connecting your Azure CSP account, ensure you have:
+
+- **Global Administrator** or **Partner Center Admin Agent** role in your partner tenant
+- Access to Partner Center and Azure Portal
+- Understanding of your CSP customer structure
+
+## Steps to Connect
+
+<Steps>
+<Step title="Create Application Registration">
+
+1. Navigate to **Azure Portal** → **Microsoft Entra ID** (Azure Active Directory)
+   - **Important:** Use your **partner tenant**, not customer tenants
+2. Go to **App registrations** → **+ New registration**
+3. Set **Name**: `yasu-cost-optimizer-{your-account-id}`
+4. Select **Accounts in this organizational directory only**
+5. Click **Register**
+6. **Copy the following values** (you'll need them later):
+   - **Application (client) ID**
+   - **Directory (tenant) ID**
+
+</Step>
+
+<Step title="Generate Client Secret">
+
+1. In the app registration, go to **Certificates & secrets**
+2. Click **+ New client secret**
+3. Enter a **Description**: `Yasu Access Key`
+4. Select **Expires**: Choose **24 months** (recommended)
+5. Click **Add**
+6. **Copy the secret Value immediately** — it won't be shown again
+
+<Warning>
+**Important:** Save this secret securely. You'll need it to complete the connection in Yasu.
+</Warning>
+
+</Step>
+
+<Step title="Grant Partner Center API Permissions">
+
+CSP accounts require Partner Center API access:
+
+1. In the app registration, go to **API permissions**
+2. Click **+ Add a permission**
+3. Select **Partner Center (Microsoft Partner Center)**
+4. Select **Delegated permissions**
+5. Add the following permissions:
+   - `https://api.partnercenter.microsoft.com/user_impersonation`
+6. Click **Add permissions**
+7. Click **Grant admin consent** (requires Global Administrator)
+
+<Note>
+Partner Center API permissions allow Yasu to access customer billing data through the CSP relationship.
+</Note>
+
+</Step>
+
+<Step title="Assign Subscription-Level Roles">
+
+For each customer subscription you want Yasu to access:
+
+1. Navigate to **Azure Portal** → **Subscriptions**
+2. Select a customer subscription
+3. Go to **Access control (IAM)** → **+ Add** → **Add role assignment**
+4. Assign the following roles to your Service Principal:
+   - **Reader**
+   - **Cost Management Reader**
+   - **Monitoring Reader**
+5. Repeat for each customer subscription
+
+<Warning>
+**Important:** You must assign roles for each customer subscription individually. Consider using Azure Management Groups if you have many subscriptions.
+</Warning>
+
+</Step>
+
+<Step title="Complete Connection in Yasu">
+
+1. In Yasu, navigate to **Settings** → **Integrations** → **Connect Azure**
+2. Select **Cloud Solution Provider (CSP)** as your billing account type
+3. Enter the following credentials:
+   - **Tenant ID**: Directory (tenant) ID from Step 1 (partner tenant)
+   - **Subscription ID**: One of your customer subscription IDs
+   - **Client ID**: Application (client) ID from Step 1
+   - **Client Secret**: The secret value from Step 2
+4. Click **Connect Account**
+
+Yasu will verify:
+- Service Principal authentication
+- Partner Center API access
+- Subscription access
+- Cost Management permissions
+
+</Step>
+</Steps>
+
+## What's Different for CSP Accounts?
+
+With CSP accounts, Yasu:
+
+- ✅ Connects to your **partner tenant** (not individual customer tenants)
+- ✅ Accesses customer billing data through **Partner Center API**
+- ✅ Requires **Partner Center API permissions** in addition to Azure RBAC roles
+- ✅ Can access **multiple customer subscriptions** under your CSP relationship
+- ✅ Provides **partner-level cost visibility** across all customers
+
+## CSP-Specific Considerations
+
+### Customer Data Access
+
+- Yasu accesses customer data through your partner relationship
+- Ensure you have proper customer consent for cost analysis
+- Customer data remains under your CSP agreement terms
+
+### Multi-Customer Setup
+
+If you manage multiple customers:
+
+1. Connect once using your partner tenant credentials
+2. Yasu will discover all customer subscriptions you have access to
+3. You can filter views by customer subscription in Yasu dashboard
+
+### Partner Center Integration
+
+- Partner Center API provides billing data for CSP customers
+- Cost data may have a delay of 24-48 hours
+- Some advanced cost features may require direct customer subscription access
+
+## Verification Steps
+
+After connecting, Yasu will perform the following checks:
+
+1. **Service Principal Authentication**
+   - Verifies credentials are valid in partner tenant
+   - Tests authentication with Azure AD
+
+2. **Partner Center API Access**
+   - Verifies Partner Center API permissions
+   - Tests access to customer billing data
+
+3. **Subscription Access**
+   - Verifies RBAC roles are assigned to customer subscriptions
+   - Tests resource reading permissions
+
+4. **Cost Data Collection**
+   - Begins collecting billing data from Partner Center
+   - Initializes cost analysis for accessible subscriptions
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Partner Center API access denied">
+
+**What it means:** The Service Principal may not have Partner Center API permissions.
+
+**Fix:**
+1. Verify Partner Center API permissions are added in App Registration
+2. Ensure **Grant admin consent** was clicked (requires Global Administrator)
+3. Check that you're using the partner tenant, not a customer tenant
+4. Wait 5-10 minutes for permissions to propagate
+
+</Accordion>
+
+<Accordion title="Cannot access customer subscriptions">
+
+**What it means:** The Service Principal may not have roles assigned to customer subscriptions.
+
+**Fix:**
+1. Verify RBAC roles (Reader, Cost Management Reader, Monitoring Reader) are assigned
+2. Ensure roles are assigned at the Subscription level (not Resource Group)
+3. Check that you're assigning roles in the correct customer subscription
+4. Wait 5 minutes for role assignments to propagate
+
+</Accordion>
+
+<Accordion title="Missing customer billing data">
+
+**What it means:** Partner Center billing data may have delays or access issues.
+
+**Fix:**
+- Wait 24-48 hours for initial billing data sync
+- Verify Partner Center API permissions are correctly configured
+- Check that customer subscriptions are active and have billing enabled
+- Ensure you have the correct CSP relationship type (Direct or Indirect)
+
+</Accordion>
+
+<Accordion title="Wrong tenant selected">
+
+**What it means:** You may have selected a customer tenant instead of partner tenant.
+
+**Fix:**
+1. Verify you're using your **partner tenant** credentials
+2. Check the Directory (tenant) ID matches your partner tenant
+3. Ensure the App Registration was created in the partner tenant
+4. Recreate the connection using partner tenant credentials
+
+</Accordion>
+</AccordionGroup>
+
+## Security & Compliance
+
+<Warning>
+**Important for CSP Partners:**
+
+- Ensure customer consent for cost analysis and data access
+- Review your CSP agreement terms regarding third-party tool access
+- Consider customer data privacy requirements
+- Maintain audit logs of access for compliance
+
+</Warning>
+
+## Next Steps
+
+Once connected, Yasu will start analyzing costs across your CSP customer base. You can:
+
+- View partner-level cost breakdowns
+- See costs by customer subscription
+- Get optimization recommendations for customer resources
+- Set up cost alerts and budgets
+
+<Card title="Back to Azure Connection Guide" icon="arrow-left" href="/guides/connect-azure">
+  Return to the main Azure connection guide
+</Card>
