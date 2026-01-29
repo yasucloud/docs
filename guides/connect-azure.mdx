@@ -55,56 +55,70 @@ Before connecting your Azure account, ensure you have:
 - Access to Azure Portal or Azure CLI
 - PowerShell or Azure CLI installed (for automated setup)
 
-## Quick Setup via PowerShell Script
+## Quick Setup via Azure CLI
 
-The fastest way to connect your Azure account is through our automated PowerShell script.
+The fastest way to connect your Azure account is through Azure CLI commands.
 
 <Steps>
-<Step title="Navigate to Integrations">
+<Step title="Open Azure Connection Dialog">
 
 1. Log in to your Yasu dashboard at [app.yasu.cloud](https://app.yasu.cloud)
-2. Go to **Settings** → **Integrations**
-3. Click **Connect Azure**
+2. Navigate to the **Onboarding** page
+3. Click the **Connect** button next to Azure
+
+This opens the Azure connection dialog with step-by-step instructions.
 
 </Step>
 
-<Step title="Download and Run Setup Script">
+<Step title="Step 1: Create Service Principal">
 
-You'll see a PowerShell script that you can copy and run in Azure Cloud Shell or your local PowerShell environment.
+In the dialog, you'll see an Azure CLI command to create a Service Principal:
 
-1. **Copy the script** from the Yasu dashboard
-2. **Open Azure Cloud Shell** (recommended) or PowerShell with Azure module installed
-3. **Paste and run the script**
+1. **Copy the command** from the dialog (it will be pre-filled with your account ID)
+2. **Open Azure Cloud Shell** (recommended) or your local terminal with Azure CLI installed
+3. **Paste and run the command**
 
-The script will:
-- Create a Service Principal named `yasu-cost-optimizer-{your-account-id}`
-- Assign required RBAC roles (Reader, Cost Management Reader, Monitoring Reader)
-- Output your connection credentials
+The command will create a Service Principal named `yasu-cost-optimizer-{your-account-id}` and output:
+- **appId** (Client ID)
+- **password** (Client Secret)
+- **tenant** (Tenant ID)
 
 <Warning>
-**Important:** Save the credentials securely. The client secret will only be shown once.
+**Important:** Save these credentials securely. The client secret will only be shown once.
 </Warning>
 
 </Step>
 
-<Step title="Enter Credentials in Yasu">
+<Step title="Step 2: Assign Roles">
 
-After running the script, you'll receive:
+The dialog shows three role assignment commands. For each subscription you want to connect:
 
-- **Tenant ID** (Directory ID)
-- **Subscription ID**
-- **Client ID** (Application ID)
-- **Client Secret**
+1. **Copy each role assignment command** from the dialog
+2. **Replace placeholders**:
+   - Replace `<APP_ID>` with your appId from Step 1
+   - Replace `<SUB_ID>` with your Azure subscription ID
+3. **Run each command** in Azure CLI:
+   - **Reader** - Grants read access to subscription resources
+   - **Cost Management Reader** - Grants access to view cost and billing data
+   - **Advisor Reviews Reader** - Grants access to view Azure Advisor recommendations
 
-Enter these credentials in the Yasu dashboard:
+<Note>
+Role assignments may take up to 5 minutes to propagate. Wait a few minutes before testing the connection.
+</Note>
 
-1. Return to **Settings** → **Integrations** → **Connect Azure**
-2. Fill in the credential fields:
-   - Tenant ID
-   - Subscription ID
-   - Client ID (Application ID)
-   - Client Secret
-3. Click **Connect Account**
+</Step>
+
+<Step title="Step 3: Enter Credentials">
+
+After completing Steps 1 and 2, enter your credentials in the dialog:
+
+1. **Tenant ID** - The `tenant` value from Step 1
+2. **Service Principal App ID** - The `appId` value from Step 1
+3. **Client Secret** - The `password` value from Step 1
+
+4. Click **Connect Azure**
+
+The system will validate your credentials and test the connection.
 
 </Step>
 
@@ -114,20 +128,17 @@ Yasu will automatically verify your connection:
 
 - ✅ **Authentication test** - Verifies Service Principal credentials
 - ✅ **Permission check** - Confirms required roles are assigned
-- ✅ **Subscription access** - Validates subscription access
-- ✅ **Cost Management access** - Tests cost data access
 
-This typically takes **1-2 minutes**.
+This typically takes **10-30 seconds**. If validation fails, check your credentials and ensure role assignments have propagated (wait 5 minutes after assigning roles).
 
 </Step>
 
-<Step title="Verify Connection Status">
+<Step title="Connection Complete">
 
-Return to your Yasu dashboard. You should see:
+Once verified, the dialog will close and you'll see:
 
-- ✅ **Connection status**: Active
-- ✅ **Subscription Name**: Your Azure subscription name
-- ✅ **Data sync**: In progress
+- ✅ **Azure connection**: Active
+- ✅ **Onboarding progress**: Automatically advances to the next step
 
 <Check>
 Your first cost-saving insights will appear within **5-10 minutes** after connection.
@@ -197,13 +208,13 @@ Role assignments may take up to 5 minutes to propagate. Wait a few minutes befor
 
 <Step title="Complete Connection in Yasu">
 
-1. Return to **Settings** → **Integrations** → **Connect Azure** in Yasu
-2. Enter the credentials:
-   - **Tenant ID**: Directory (tenant) ID from Step 1
-   - **Subscription ID**: Your Azure subscription ID
-   - **Client ID**: Application (client) ID from Step 1
-   - **Client Secret**: The secret value from Step 2
-3. Click **Connect Account**
+1. Return to the **Onboarding** page in Yasu
+2. Click **Connect** next to Azure to open the connection dialog
+3. Follow Steps 1-3 in the dialog:
+   - Create Service Principal using the provided Azure CLI command
+   - Assign roles using the provided commands (replace placeholders)
+   - Enter credentials: Tenant ID, Service Principal App ID, and Client Secret
+4. Click **Connect Azure** to complete the connection
 
 </Step>
 </Steps>
@@ -216,7 +227,7 @@ The Service Principal is granted the following **read-only** RBAC roles at the s
 |------|---------|-------------|
 | **Reader** | Read all Azure resources | `*/read` |
 | **Cost Management Reader** | Access cost and billing data | `Microsoft.Consumption/*/read`, `Microsoft.CostManagement/*/read` |
-| **Monitoring Reader** | Access metrics and monitoring data | `Microsoft.Insights/*/read`, `Microsoft.OperationalInsights/*/read` |
+| **Advisor Reviews Reader** | Access Azure Advisor recommendations | `Microsoft.Advisor/*/read` |
 
 ## Troubleshooting
 
@@ -249,7 +260,7 @@ az ad app credential reset --id {client-id}
 
 **What to check:**
 
-1. **Missing role assignments** - Verify all three roles are assigned (Reader, Cost Management Reader, Monitoring Reader)
+1. **Missing role assignments** - Verify all three roles are assigned (Reader, Cost Management Reader, Advisor Reviews Reader)
 2. **Role propagation delay** - Azure role assignments can take up to 5 minutes to propagate
 3. **Wrong scope** - Ensure roles are assigned at the Subscription level, not Resource Group level
 
@@ -303,6 +314,7 @@ az role assignment create \
 1. **Cost Management API access** - Verify Cost Management Reader role is assigned at subscription scope
 2. **Data delay** - Cost data may take 24-48 hours to appear after first connection
 3. **Subscription billing** - Ensure the subscription has active billing and resources
+4. **Role propagation** - Wait 5 minutes after assigning roles before testing the connection
 
 **Solution:**
 
@@ -332,8 +344,8 @@ az role assignment create \
 1. Create a new client secret in Azure Portal (App Registration → Certificates &amp; secrets)
 2. Update the secret in Yasu before the old one expires:
    - Go to **Settings** → **Integrations** → Your Azure connection
-   - Click **Update Client Secret**
-   - Enter the new secret value
+   - Click **Update Client Secret** or **Retry connection**
+   - Enter the new secret value along with Tenant ID and Client ID
    - Save changes
 
 <Warning>
