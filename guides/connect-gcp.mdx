@@ -28,16 +28,10 @@ flowchart TD
     BA[Billing Account] --> P1[Project 1]
     BA --> P2[Project 2]
     BA --> P3[Project 3]
-    
+
     BQ[BigQuery] <--> P1
-    
-   BA -- "BigQuery export" --> P1
-    
-    classDef default fill:#e6e6fa,stroke:#333,stroke-width:1px
-    classDef bq fill:#ffffff,stroke:#333,stroke-width:1px
-    
-    class BQ bq
-    
+
+    BA -- "BigQuery export" --> P1
 ```
 
 ## Steps to Connect
@@ -106,16 +100,12 @@ Yasu needs the following **read-only** roles to gather cost, usage, and resource
    yasu-connector@yasu-437610.iam.gserviceaccount.com
    ```
 5. Under **"Select a role"**, add these roles:
-   - ✅ **Viewer** (`roles/viewer`) - Basic read access to project resources
-   - ✅ **Compute Viewer** (`roles/compute.viewer`) - For VM scanning
-   - ✅ **Cloud SQL Viewer** (`roles/cloudsql.viewer`) - For database scanning
-   - ✅ **Kubernetes Engine Viewer** (`roles/container.viewer`) - For GKE scanning
-   - ✅ **Storage Object Viewer** (`roles/storage.objectViewer`) - For storage scanning
-   - ✅ **Monitoring Viewer** (`roles/monitoring.viewer`) - For utilization metrics
+   - ✅ **Viewer** (`roles/viewer`) - Basic read access to project resources (covers Compute, Cloud SQL, GKE, and Monitoring read permissions)
+   - ✅ **Browser** (`roles/browser`) - Read access to browse the project hierarchy
+   - ✅ **Storage Object Viewer** (`roles/storage.objectViewer`) - For storage scanning (not included in Viewer)
    - ✅ **BigQuery Data Viewer** (`roles/bigquery.dataViewer`) - For BigQuery scanning
    - ✅ **Recommender Viewer** (`roles/recommender.viewer`) - For GCP recommendations
    - ✅ **Billing Account Viewer** (`roles/billing.viewer`) - For cost calculations
-   - ✅ **Get the project name** (`resourcemanager.projects.get`) - Permission to retrieve project information
 6. Click **"SAVE"**
 
 <Note>
