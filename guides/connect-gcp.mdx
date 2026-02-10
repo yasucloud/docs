@@ -42,10 +42,9 @@ flowchart TD
 Before starting the connection process, make sure you have the following information ready:
 
 **Required:**
-- **GCP Project ID(s)** - The project ID(s) you want Yasu to scan
+- **GCP Project ID** - The project ID that hosts your BigQuery billing export dataset
   - Format: `my-project-id` (not the project number)
-  - You can provide multiple project IDs if needed
-  - Example: `production-project`, `staging-project`
+  - For **Organization scope**, Yasu auto-discovers all projects in the organization
 
 **Required for Cost Analysis:**
 - **Billing Account ID** - Required for accurate cost calculations
@@ -104,12 +103,24 @@ Yasu needs the following **read-only** roles to gather cost, usage, and resource
    - ✅ **Browser** (`roles/browser`) - Read access to browse the project hierarchy
    - ✅ **Storage Object Viewer** (`roles/storage.objectViewer`) - For storage scanning (not included in Viewer)
    - ✅ **BigQuery Data Viewer** (`roles/bigquery.dataViewer`) - For BigQuery scanning
+   - ✅ **BigQuery Job User** (`roles/bigquery.jobUser`) - For running BigQuery billing queries
    - ✅ **Recommender Viewer** (`roles/recommender.viewer`) - For GCP recommendations
    - ✅ **Billing Account Viewer** (`roles/billing.viewer`) - For cost calculations
 6. Click **"SAVE"**
 
+#### Organization-Level Permissions (for org scope only)
+
+If you selected **Organization scope** in Yasu, grant these **additional** roles at the **organization level** (not project level):
+
+1. Go to **GCP Console** → **IAM & Admin** → **IAM**
+2. Switch to your **Organization** (top of the page)
+3. Click **"+ GRANT ACCESS"**
+4. Add `yasu-connector@yasu-437610.iam.gserviceaccount.com`
+5. Add the role:
+   - ✅ **Browser** (`roles/browser`) - Allows Yasu to discover all projects in your organization
+
 <Note>
-You can grant these permissions at the **Organization** level if you want Yasu to access multiple projects.
+For organization scope, you still need to grant the project-level roles above on **each project** you want scanned (or use [IAM policy inheritance](https://cloud.google.com/iam/docs/granting-changing-revoking-access) by granting them at the org/folder level).
 </Note>
 
 </Step>
@@ -138,86 +149,6 @@ If you have BigQuery billing export configured, you need to grant dataset-level 
 
 </Step>
 
-<Step title="Enable required APIs">
-
-You must enable the following Google Cloud APIs in **each project** you want Yasu to scan.
-
-#### Core APIs (Required for All Scans)
-
-Enable these APIs in every project:
-
-1. ✅ **Cloud Resource Manager API**
-   - API Name: `cloudresourcemanager.googleapis.com`
-   - Provides project information and access control
-
-2. ✅ **Cloud Billing API**
-   - API Name: `cloudbilling.googleapis.com`
-   - **Critical:** Needed for cost calculations
-
-3. ✅ **Cloud Monitoring API**
-   - API Name: `monitoring.googleapis.com`
-   - **Critical:** Needed for utilization metrics
-
-4. ✅ **BigQuery API**
-   - API Name: `bigquery.googleapis.com`
-   - Required for accessing billing export data
-
-#### Service-Specific APIs
-
-Enable these APIs **only if** you use these services:
-
-5. ✅ **Compute Engine API** (if you have VMs)
-   - API Name: `compute.googleapis.com`
-   - Required for: VM scanning, disk scanning, IP scanning
-
-6. ✅ **Cloud SQL Admin API** (if you have Cloud SQL databases)
-   - API Name: `sqladmin.googleapis.com`
-   - **Note:** This API is **NOT enabled by default** - you must enable it manually
-
-7. ✅ **Kubernetes Engine API** (if you have GKE clusters)
-   - API Name: `container.googleapis.com`
-   - **Note:** This API is **NOT enabled by default** - you must enable it manually
-
-8. ✅ **BigQuery Reservation API** (if you use BigQuery slot commitments)
-   - API Name: `bigqueryreservation.googleapis.com`
-   - **Note:** This API is **NOT enabled by default** - you must enable it manually
-
-9. ✅ **Cloud Storage API** (if you use Cloud Storage)
-   - API Name: `storage.googleapis.com`
-   - Usually enabled by default
-
-10. ✅ **Recommender API** (for GCP native recommendations)
-    - API Name: `recommender.googleapis.com`
-
-#### How to Enable APIs
-
-**Option 1: Using GCP Console (Easiest)**
-1. Go to **APIs & Services** → **Library**
-2. Search for the API name (e.g., "Compute Engine API")
-3. Click on the API
-4. Click **"Enable"**
-5. Repeat for all APIs listed above
-
-**Option 2: Using gcloud Command**
-```bash
-# Replace PROJECT_ID with your actual project ID
-gcloud services enable compute.googleapis.com --project=PROJECT_ID
-gcloud services enable sqladmin.googleapis.com --project=PROJECT_ID
-gcloud services enable container.googleapis.com --project=PROJECT_ID
-gcloud services enable bigqueryreservation.googleapis.com --project=PROJECT_ID
-gcloud services enable cloudbilling.googleapis.com --project=PROJECT_ID
-gcloud services enable monitoring.googleapis.com --project=PROJECT_ID
-gcloud services enable recommender.googleapis.com --project=PROJECT_ID
-gcloud services enable cloudresourcemanager.googleapis.com --project=PROJECT_ID
-gcloud services enable bigquery.googleapis.com --project=PROJECT_ID
-```
-
-<Warning>
-**Important:** After enabling APIs, wait **1-2 minutes** before connecting in Yasu.
-</Warning>
-
-</Step>
-
 <Step title="Verify project requirements">
 
 Your projects must meet these requirements before connecting:
@@ -230,43 +161,19 @@ Your projects must meet these requirements before connecting:
 
 <Step title="Complete connection in Yasu Dashboard">
 
-1. In Yasu, navigate to **Settings** → **Cloud Accounts** → **Add GCP Account**.
-2. **Enter your information:**
-   - Project ID (hosting BigQuery billing dataset)
-   - Billing Account ID
-   - BigQuery Dataset Name (billing export dataset)
-3. Select whether you will **upload the JSON key file** or use **Workload Identity** with an existing service account.
-   - **JSON Key**: You'll be prompted to upload your service account's JSON key.
-   - **Workload Identity**: Provide the service account email you created above and ensure Yasu's environment is allowed to assume that identity.
-4. Click **Connect Account** and wait for verification.
+1. In Yasu, navigate to **Settings** → **Cloud Accounts** → **Add GCP Account** and click **Connect**.
+2. **Step 1 — Scope**: Select **Project** (single project) or **Organization** (all projects in an org). For organization scope, enter your Organization ID.
+3. **Step 2 — Billing**: Enter your **Billing Account ID** and **BigQuery Dataset ID** (format: `project-id.dataset_name`).
+4. **Step 3 — Connect**: Verify the required roles are granted to Yasu's service account, then click **Connect**.
 
-Yasu will verify:
-- Service account has required permissions
-- APIs are enabled
+Yasu will automatically verify:
+- Service account has the required permissions
+- Required APIs are enabled
 - BigQuery dataset is accessible
 - Billing information is available
 
 </Step>
 </Steps>
-
-## What We Will Scan
-
-Once configured, Yasu will scan your GCP environment for:
-
-### Cost Optimization Opportunities
-
-1. **Idle VM Instances** - VMs that are running but not being used
-2. **Over-Sized VMs** - VMs that can be downsized to save costs
-3. **Unattached Disks** - Disks not connected to any VM
-4. **Unused IP Addresses** - Static IPs not being used
-5. **Unused Storage Buckets** - Cloud Storage buckets with no activity
-6. **Underutilized BigQuery Slots** - BigQuery commitments not fully used
-7. **GKE Cluster Optimization** - Kubernetes clusters that can be optimized
-8. **Idle Cloud SQL Databases** - Database instances with no activity
-
-### GCP Native Recommendations
-
-We also pull recommendations directly from Google's Recommender API for additional insights.
 
 ## Verification Steps
 
@@ -277,19 +184,14 @@ After connecting, Yasu will perform the following checks:
    - Confirms access to your projects
    - Verifies the correct JSON key or Workload Identity binding
 
-2. **API Availability Check**
-   - Verifies all required APIs are enabled
-   - Tests API connectivity
-
-3. **Data Collection Vectorizing**
-   - Begins collecting **Billing** data (Cost Explorer / BigQuery cost table)
+2. **Data Collection**
+   - Begins collecting **Billing** data from BigQuery
    - Starts monitoring **Resource** metrics
-   - Initializes additional analyses based on your enabled APIs
 
-4. **Parsing Collected Data**
-   - The collected data will be converted into Yasu's internal format and stored in the vector database for cost optimization and recommendation generation
+3. **Parsing Collected Data**
+   - The collected data will be converted into Yasu's internal format for cost optimization and recommendation generation
 
-5. **Integration Status**
+4. **Integration Status**
    - You will see a **green checkmark** when the connection is successful
    - Optimization recommendations will begin appearing after the initial sync (usually within a few minutes)
 
