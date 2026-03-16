@@ -1,0 +1,108 @@
+---
+title: "SSO with Google Workspace"
+description: "Step-by-step guide to configure SAML SSO with Google Workspace for your Yasu workspace"
+icon: "google"
+---
+
+Configure SSO for your Yasu workspace using **Google Workspace** as your identity provider.
+
+<Info>
+Before starting, complete the [generic SSO setup prerequisites](/guides/sso-setup#prerequisites) and have the SAML configuration values from Yasu's SSO page ready.
+</Info>
+
+<Steps>
+<Step title="Create a custom SAML app">
+
+1. Sign in to [Google Admin Console](https://admin.google.com)
+2. Navigate to **Apps** → **Web and Mobile Apps**
+3. Click **Add App** → **Add custom SAML app**
+4. Enter an app name (e.g., "Yasu") and optionally upload a logo
+5. Click **Continue**
+
+</Step>
+
+<Step title="Download IdP metadata">
+
+On the **Google Identity Provider details** screen (step 2 of the wizard):
+
+1. Click **Download Metadata** to save the IdP metadata XML file
+2. Keep this file — you'll need it when configuring Yasu
+3. Click **Continue**
+
+<Warning>
+Download the metadata now — you cannot retrieve it later without starting over.
+</Warning>
+
+</Step>
+
+<Step title="Configure service provider details">
+
+1. **ACS URL** → paste the ACS URL from Yasu's SSO page
+2. **Entity ID** → paste the Entity ID from Yasu's SSO page
+3. **Name ID format** → select **EMAIL**
+4. **Name ID** → select **Basic Information > Primary email**
+5. Click **Continue**
+
+</Step>
+
+<Step title="Configure attribute mapping">
+
+Set up attribute mapping as follows:
+
+| Google Directory attribute | App attribute |
+|---|---|
+| Basic Information > Primary email | `email` |
+| Basic Information > First name | `firstName` |
+| Basic Information > Last name | `lastName` |
+
+Optionally, add group membership:
+
+1. Click **Add mapping** under **Group membership**
+2. Select the groups to include
+3. Set the app attribute name to `groups`
+
+<Tip>
+Group membership mapping is required if you want to use [role mapping](/guides/sso-setup#role-mapping) to automatically assign Yasu roles based on Google Workspace groups.
+</Tip>
+
+Click **Finish**.
+
+</Step>
+
+<Step title="Enable the app">
+
+1. On the app details page, go to **User access**
+2. Select the organizational units that should have access
+3. Set **Service status** to **ON for everyone** (or selected OUs)
+4. Click **Save**
+
+</Step>
+
+<Step title="Configure in Yasu">
+
+1. In Yasu, go to **Integrations** → **SSO Configuration** and click **Configure SSO**
+2. Select **Google Workspace** as the identity provider
+3. Enter your company domain
+4. Upload or paste the metadata XML you downloaded in Step 2
+5. Click **Add Domain**
+
+<Check>
+Users in the enabled organizational units can now sign in to Yasu via SSO. New users will be automatically provisioned via [JIT provisioning](/guides/sso-setup#just-in-time-jit-provisioning).
+</Check>
+
+</Step>
+</Steps>
+
+## Attribute Mapping Reference
+
+When configuring [attribute mapping](/guides/sso-setup#configure-attribute-mapping-optional) in Yasu for Google Workspace, use these values:
+
+| Yasu field | Google attribute |
+|---|---|
+| Name attribute | `name` |
+| Picture attribute | `picture` |
+| Groups/role attribute | `groups` |
+
+<Note>
+These are auto-configured when you select **Google Workspace** as the identity provider during setup.
+</Note>

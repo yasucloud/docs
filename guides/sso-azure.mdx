@@ -1,0 +1,94 @@
+---
+title: "SSO with Microsoft Entra ID"
+description: "Step-by-step guide to configure SAML SSO with Microsoft Entra ID (Azure AD) for your Yasu workspace"
+icon: "microsoft"
+---
+
+Configure SSO for your Yasu workspace using **Microsoft Entra ID** (formerly Azure AD) as your identity provider.
+
+<Info>
+Before starting, complete the [generic SSO setup prerequisites](/guides/sso-setup#prerequisites) and have the SAML configuration values from Yasu's SSO page ready.
+</Info>
+
+<Steps>
+<Step title="Create an Enterprise Application">
+
+1. Sign in to the [Azure Portal](https://portal.azure.com)
+2. Navigate to **Microsoft Entra ID** → **Enterprise Applications**
+3. Click **New Application** → **Create your own application**
+4. Select **"Integrate any other application you don't find in the gallery (Non-gallery)"**
+5. Name the application (e.g., "Yasu") and click **Create**
+
+</Step>
+
+<Step title="Configure SAML Single Sign-On">
+
+1. In the application, go to **Single sign-on** → select **SAML**
+2. Under **Basic SAML Configuration**, click **Edit**:
+   - **Identifier (Entity ID)** → paste the Entity ID from Yasu's SSO page
+   - **Reply URL (Assertion Consumer Service URL)** → paste the ACS URL from Yasu's SSO page
+3. Click **Save**
+
+</Step>
+
+<Step title="Configure attributes and claims">
+
+The default attributes are typically pre-configured correctly:
+
+| Claim name | Value |
+|---|---|
+| `emailaddress` | `user.mail` |
+| `givenname` | `user.givenname` |
+| `surname` | `user.surname` |
+| `name` | `user.displayname` |
+
+**To add group claims (optional):**
+
+1. Under **User Attributes & Claims**, click **Add a group claim**
+2. Select the group types to include (e.g., "Security groups" or "All groups")
+3. Save the configuration
+
+<Tip>
+Group claims are required if you want to use [role mapping](/guides/sso-setup#role-mapping) to automatically assign Yasu roles based on Entra ID group membership.
+</Tip>
+
+</Step>
+
+<Step title="Download metadata and configure Yasu">
+
+1. Under **SAML Certificates**, click **Download** next to **Federation Metadata XML**
+2. In Yasu, go to **Integrations** → **SSO Configuration** and click **Configure SSO**
+3. Select **Microsoft Entra ID** as the identity provider
+4. Enter your company domain
+5. Upload or paste the downloaded Federation Metadata XML
+6. Click **Add Domain**
+
+</Step>
+
+<Step title="Assign users">
+
+1. In Azure Portal, go to the application's **Users and groups** page
+2. Click **Add user/group**
+3. Select the users or groups that should have access
+4. Click **Assign**
+
+<Check>
+Users assigned to the application can now sign in to Yasu via SSO. New users will be automatically provisioned via [JIT provisioning](/guides/sso-setup#just-in-time-jit-provisioning).
+</Check>
+
+</Step>
+</Steps>
+
+## Attribute Mapping Reference
+
+When configuring [attribute mapping](/guides/sso-setup#configure-attribute-mapping-optional) in Yasu for Microsoft Entra ID, use these values:
+
+| Yasu field | Entra ID attribute |
+|---|---|
+| Name attribute | `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name` |
+| Picture attribute | _(not available by default)_ |
+| Groups/role attribute | `http://schemas.microsoft.com/ws/2008/06/identity/claims/groups` |
+
+<Note>
+These are auto-configured when you select **Microsoft Entra ID** as the identity provider during setup.
+</Note>

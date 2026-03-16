@@ -1,0 +1,95 @@
+---
+title: "SSO with Okta"
+description: "Step-by-step guide to configure SAML SSO with Okta for your Yasu workspace"
+icon: "key"
+---
+
+Configure SSO for your Yasu workspace using **Okta** as your identity provider.
+
+<Info>
+Before starting, complete the [generic SSO setup prerequisites](/guides/sso-setup#prerequisites) and have the SAML configuration values from Yasu's SSO page ready.
+</Info>
+
+<Steps>
+<Step title="Create a SAML application">
+
+1. Sign in to the [Okta Admin Console](https://admin.okta.com)
+2. Go to **Applications** → **Applications** → **Create App Integration**
+3. Select **SAML 2.0** and click **Next**
+4. Name the application (e.g., "Yasu") and click **Next**
+
+</Step>
+
+<Step title="Configure SAML settings">
+
+1. **Single sign-on URL** → paste the ACS URL from Yasu's SSO page
+2. **Audience URI (SP Entity ID)** → paste the Entity ID from Yasu's SSO page
+3. **Name ID format** → select **EmailAddress**
+4. **Application username** → select **Email**
+
+</Step>
+
+<Step title="Configure attribute statements">
+
+Under **Attribute Statements (Optional)**, add:
+
+| Name | Value |
+|---|---|
+| `email` | `user.email` |
+| `FirstName` | `user.firstName` |
+| `LastName` | `user.lastName` |
+| `displayName` | `user.displayName` |
+
+Under **Group Attribute Statements (Optional)**, add:
+
+| Name | Filter | Value |
+|---|---|---|
+| `groups` | Matches regex | `.*` |
+
+<Note>
+This sends all group memberships. You can use a more specific filter to limit which groups are sent. Group attribute statements are required if you want to use [role mapping](/guides/sso-setup#role-mapping).
+</Note>
+
+Click **Next**, then select your feedback option and click **Finish**.
+
+</Step>
+
+<Step title="Download metadata and configure Yasu">
+
+1. On the application page, go to the **Sign On** tab
+2. Under **SAML Signing Certificates**, click **Actions** → **View IdP metadata**
+3. Copy all the XML content (or right-click and save)
+4. In Yasu, go to **Integrations** → **SSO Configuration** and click **Configure SSO**
+5. Select **Okta** as the identity provider
+6. Enter your company domain
+7. Paste the metadata XML
+8. Click **Add Domain**
+
+</Step>
+
+<Step title="Assign users and groups">
+
+1. Go to the **Assignments** tab of the Okta application
+2. Click **Assign** → **Assign to People** or **Assign to Groups**
+3. Select the users or groups and click **Assign** → **Done**
+
+<Check>
+Assigned users can now sign in to Yasu via SSO. New users will be automatically provisioned via [JIT provisioning](/guides/sso-setup#just-in-time-jit-provisioning).
+</Check>
+
+</Step>
+</Steps>
+
+## Attribute Mapping Reference
+
+When configuring [attribute mapping](/guides/sso-setup#configure-attribute-mapping-optional) in Yasu for Okta, use these values:
+
+| Yasu field | Okta attribute |
+|---|---|
+| Name attribute | `displayName` |
+| Picture attribute | `profileUrl` |
+| Groups/role attribute | `groups` |
+
+<Note>
+These are auto-configured when you select **Okta** as the identity provider during setup.
+</Note>
