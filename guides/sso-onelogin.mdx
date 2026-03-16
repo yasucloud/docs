@@ -1,0 +1,93 @@
+---
+title: "SSO with OneLogin"
+description: "Step-by-step guide to configure SAML SSO with OneLogin for your Yasu workspace"
+icon: "key"
+---
+
+Configure SSO for your Yasu workspace using **OneLogin** as your identity provider.
+
+<Info>
+Before starting, complete the [generic SSO setup prerequisites](/guides/sso-setup#prerequisites) and have the SAML configuration values from Yasu's SSO page ready.
+</Info>
+
+<Steps>
+<Step title="Create a SAML application">
+
+1. Sign in to the [OneLogin Admin Portal](https://app.onelogin.com/admin)
+2. Go to **Applications** → **Applications** → **Add App**
+3. Search for **SAML Custom Connector (Advanced)** and select it
+4. Name the application (e.g., "Yasu") and click **Save**
+
+</Step>
+
+<Step title="Configure SAML connection settings">
+
+1. Go to the **Configuration** tab
+2. Set the following fields:
+   - **Audience (EntityID)** → paste the Entity ID from Yasu's SSO page
+   - **ACS (Consumer) URL Validator** → paste the ACS URL from Yasu's SSO page (escape dots with `\.`)
+   - **ACS (Consumer) URL** → paste the ACS URL from Yasu's SSO page
+3. **SAML nameID format** → select **Email**
+4. Click **Save**
+
+</Step>
+
+<Step title="Configure attribute mappings (parameters)">
+
+Go to the **Parameters** tab and add the following fields (click the **+** to add each):
+
+| Field name | Value | Include in SAML assertion |
+|---|---|---|
+| `email` | Email | ✅ |
+| `name` | First Name + Last Name | ✅ |
+| `displayName` | User.DisplayName | ✅ |
+| `memberOf` | MemberOf | ✅ |
+
+<Note>
+The `memberOf` parameter sends group memberships in the SAML assertion. This is required if you want to use [role mapping](/guides/sso-setup#role-mapping). Ensure that the users are assigned to the relevant groups in OneLogin under **Users** → **Groups**.
+</Note>
+
+Click **Save** after adding all parameters.
+
+</Step>
+
+<Step title="Download metadata and configure Yasu">
+
+1. Go to the **More Actions** dropdown (top-right) → **SAML Metadata**
+2. This downloads the metadata XML file
+3. In Yasu, go to **Integrations** → **SSO Configuration** and click **Configure SSO**
+4. Select **OneLogin** as the identity provider
+5. Enter your company domain
+6. Paste or upload the metadata XML
+7. Click **Add Domain**
+
+</Step>
+
+<Step title="Assign users to the application">
+
+1. Go to the **Users** tab of the OneLogin application
+2. Use **Roles** or individual assignment to grant access:
+   - Via **Roles**: Go to **Users** → **Roles**, create or edit a role, and add the Yasu app to it
+   - Via **Users**: Go to **Users** → **Users**, select a user, go to **Applications**, and click **+** to assign the Yasu app
+3. Click **Save**
+
+<Check>
+Assigned users can now sign in to Yasu via SSO. New users will be automatically provisioned via [JIT provisioning](/guides/sso-setup#just-in-time-jit-provisioning).
+</Check>
+
+</Step>
+</Steps>
+
+## Attribute Mapping Reference
+
+When configuring [attribute mapping](/guides/sso-setup#configure-attribute-mapping-optional) in Yasu for OneLogin, use these values:
+
+| Yasu field | OneLogin attribute |
+|---|---|
+| Name attribute | `User.DisplayName` |
+| Picture attribute | `User.PhotoURL` |
+| Groups/role attribute | `memberOf` |
+
+<Note>
+These are auto-configured when you select **OneLogin** as the identity provider during setup.
+</Note>

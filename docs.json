@@ -41,7 +41,8 @@
                   "guides/sso-setup",
                   "guides/sso-azure",
                   "guides/sso-google",
-                  "guides/sso-okta"
+                  "guides/sso-okta",
+                  "guides/sso-onelogin"
                 ]
               }
             ]
