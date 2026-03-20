@@ -33,6 +33,17 @@
                 "pages": [
                   "guides/connect-azure"
                 ]
+              },
+              {
+                "group": "SSO Setup",
+                "icon": "shield-halved",
+                "pages": [
+                  "guides/sso-setup",
+                  "guides/sso-azure",
+                  "guides/sso-google",
+                  "guides/sso-okta",
+                  "guides/sso-onelogin"
+                ]
               }
             ]
           }

@@ -1,0 +1,281 @@
+---
+title: "SSO Setup Guide"
+description: "Configure SAML Single Sign-On for your Yasu workspace so team members can authenticate using your organization's identity provider"
+icon: "shield-halved"
+---
+
+Yasu supports SAML 2.0 Single Sign-On (SSO), allowing your team members to sign in using your organization's identity provider (IdP) — such as Okta, Microsoft Entra ID, Google Workspace, or OneLogin.
+
+<CardGroup cols={2}>
+<Card title="Centralized authentication" icon="key">
+  Users sign in with their corporate credentials
+</Card>
+<Card title="JIT provisioning" icon="user-plus">
+  New users are automatically added to your workspace on first SSO sign-in
+</Card>
+<Card title="Profile sync" icon="rotate">
+  Name and profile picture are synced from your IdP on each login
+</Card>
+<Card title="Role mapping" icon="users-gear">
+  Automatically assign Yasu roles based on IdP group membership
+</Card>
+</CardGroup>
+
+## Prerequisites
+
+Before configuring SSO, ensure you have:
+
+- A Yasu workspace with a subscription plan that includes SSO
+- **Admin or Owner** access to the Yasu workspace
+- **Admin access** to your identity provider (Okta, Azure AD, Google Workspace, etc.)
+
+## Generic Setup (Any SAML 2.0 Provider)
+
+This guide works with any SAML 2.0 compatible identity provider.
+
+<Steps>
+<Step title="Gather SAML configuration values from Yasu">
+
+1. Sign in to Yasu and navigate to your workspace
+2. Go to **Integrations** → **SSO Configuration**
+3. Copy the three SAML configuration values displayed on the page:
+   - **Entity ID / Issuer** — The unique identifier for Yasu as a service provider
+   - **ACS URL (Assertion Consumer Service)** — Where your IdP sends the SAML response after authentication
+   - **NameID Format** — `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+
+{/* Screenshot: SSO configuration page showing the SAML configuration values card */}
+
+</Step>
+
+<Step title="Create a SAML application in your IdP">
+
+1. In your identity provider's admin console, create a new SAML 2.0 application
+2. Configure the following settings:
+   - **ACS URL / Reply URL / Single Sign-On URL** → paste the ACS URL from Step 1
+   - **Entity ID / Audience URI / Identifier** → paste the Entity ID from Step 1
+   - **NameID Format** → set to `emailAddress`
+3. Configure attribute statements to send:
+   - `email` — the user's email address (required)
+   - `name` or `displayName` — the user's full name (recommended)
+   - `groups` or `memberOf` — group memberships (optional, for role mapping)
+
+</Step>
+
+<Step title="Download IdP metadata XML">
+
+After saving the SAML application configuration in your IdP, download the **IdP Metadata XML** file. This XML file contains your IdP's certificate, SSO endpoint, and entity ID.
+
+</Step>
+
+<Step title="Configure SSO in Yasu">
+
+1. On the SSO Configuration page, click **Configure SSO**
+2. In the setup dialog:
+   - **Identity Provider** — Select your IdP from the dropdown (Okta, Microsoft Entra ID, Google Workspace, OneLogin, or Custom)
+   - **Company Domain** — Enter the email domain for SSO authentication (e.g., `company.com`). Users with this email domain will be redirected to your IdP.
+   - **SAML Metadata XML** — Upload the XML file or paste the metadata content directly
+3. The metadata is validated automatically — look for the green "Metadata Valid" indicator with the detected Entity ID
+4. Click **Add Domain** to save
+
+{/* Screenshot: SSO setup dialog with IdP selector, domain input, and metadata XML */}
+
+</Step>
+
+<Step title="Configure attribute mapping (optional)">
+
+Expand the configured provider to access attribute mapping settings:
+
+1. **Name attribute** — The SAML attribute name that contains the user's display name (e.g., `displayName`, `name`)
+2. **Picture attribute** — The SAML attribute name that contains the user's avatar URL (e.g., `photoUrl`, `picture`)
+3. **Groups/role attribute** — The SAML attribute name that contains group memberships (e.g., `groups`, `memberOf`)
+4. Click **Save Attribute Mapping**
+
+<Tip>
+When you select a known IdP (Okta, Azure, Google, OneLogin) during setup, attribute mappings are auto-configured with sensible defaults. You only need to adjust these if your IdP uses non-standard attribute names.
+</Tip>
+
+{/* Screenshot: Attribute mapping configuration card */}
+
+</Step>
+
+<Step title="Configure role mapping (optional)">
+
+Role mapping lets you automatically assign Yasu roles based on IdP group values:
+
+1. In the **Role Mapping** section of the expanded provider
+2. Enter the **IdP group value** — the exact group name as sent by your IdP (e.g., `Engineering`, `Admins`)
+3. Select the **Yasu role** — either **Member** or **Owner**
+4. Click **Add**
+5. Repeat for additional group-to-role mappings
+
+When a user signs in via SSO, Yasu checks their groups attribute against these mappings and assigns the corresponding role. Primary account owners cannot be downgraded via role mapping.
+
+{/* Screenshot: Role mapping section with example mappings */}
+
+</Step>
+</Steps>
+
+## Provider-Specific Guides
+
+Follow the step-by-step guide for your identity provider:
+
+<CardGroup cols={2}>
+<Card title="Microsoft Entra ID" icon="microsoft" href="/guides/sso-azure">
+  Configure SSO with Azure AD / Entra ID
+</Card>
+<Card title="Google Workspace" icon="google" href="/guides/sso-google">
+  Configure SSO with Google Workspace
+</Card>
+<Card title="Okta" icon="key" href="/guides/sso-okta">
+  Configure SSO with Okta
+</Card>
+<Card title="OneLogin" icon="key" href="/guides/sso-onelogin">
+  Configure SSO with OneLogin
+</Card>
+</CardGroup>
+
+<Tip>
+For other SAML 2.0 providers (JumpCloud, Ping Identity, etc.), follow the [Generic Setup](#generic-setup-any-saml-20-provider) guide above.
+</Tip>
+
+## Role Mapping
+
+Role mapping allows you to automatically assign Yasu workspace roles based on group memberships from your identity provider.
+
+### How it works
+
+1. When a user signs in via SSO, Yasu reads the **groups attribute** from the SAML assertion
+2. The attribute name is configurable (default: `groups`, `memberOf`, etc.) via attribute mapping
+3. Yasu checks the group value against your configured role mappings
+4. If a match is found, the user's role is updated accordingly
+
+### Setting up role mapping
+
+1. Navigate to **Integrations** → **SSO Configuration**
+2. Expand the configured SSO provider
+3. First, ensure the **Groups/role attribute** is set correctly in the Attribute Mapping section
+4. In the **Role Mapping** section:
+   - Enter the IdP group value exactly as your IdP sends it (case-sensitive)
+   - Select the Yasu role (**Member** or **Owner**)
+   - Click **Add**
+
+### Example mappings
+
+| IdP group value | Yasu role | Description |
+|---|---|---|
+| `Engineering` | Member | All engineers get member access |
+| `Platform-Admins` | Owner | Platform admins get owner access |
+| `FinOps-Team` | Owner | FinOps team leads get owner access |
+
+<Warning>
+**Important notes:**
+- **Primary owners are protected** — The primary account owner's role cannot be downgraded via role mapping
+- **First match wins** — If a user belongs to multiple groups with different role mappings, the role is determined by the first matching group
+- **No match = no change** — If none of the user's groups match a mapping, their existing role is preserved
+- **Case-sensitive** — Group values must match exactly as sent by your IdP
+</Warning>
+
+## Just-In-Time (JIT) Provisioning
+
+JIT provisioning automatically adds new users to your Yasu workspace when they first sign in via SSO.
+
+### How it works
+
+1. A user with an email matching your SSO domain signs in through your identity provider
+2. After successful authentication, Yasu checks if the user already has a membership in your workspace
+3. If not, Yasu automatically:
+   - Creates a membership with the **Member** role (unless role mapping assigns a different role)
+   - Syncs the user's profile (name, picture) from the IdP
+   - Redirects the user to the workspace
+
+<Info>
+**What admins need to know:**
+- **No manual invitations needed** — Any user who authenticates through your IdP is automatically provisioned
+- **Control access at the IdP** — To prevent someone from accessing Yasu, remove them from the SAML application in your IdP
+- **Existing users are linked** — If a user already signed up with Google OAuth or email/password and then signs in via SSO, their accounts are automatically merged
+- **Billing impact** — JIT provisioning may increase your seat count if you're on a per-seat plan
+</Info>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title='"Invalid SAML metadata" error'>
+
+**Cause:** The uploaded/pasted content is not valid SAML metadata XML.
+
+**Solution:**
+- Ensure you downloaded the **IdP Metadata XML** (not a certificate or other file)
+- Open the XML file in a text editor and verify it starts with `<?xml` and contains an `<EntityDescriptor>` element
+- For Azure: download the **Federation Metadata XML**, not the certificate
+- For Okta: use **View IdP metadata** from the Sign On tab
+- For Google: download metadata from step 2 of the SAML app wizard
+
+</Accordion>
+
+<Accordion title="SSO login redirects but user cannot access workspace">
+
+**Cause:** The user's email domain doesn't match the configured SSO domain, or JIT provisioning failed.
+
+**Solution:**
+- Verify the **Company Domain** in Yasu matches the user's email domain exactly
+- Check that the user is assigned to the SAML application in your IdP
+- Ensure the SAML assertion includes a valid email in the NameID
+
+</Accordion>
+
+<Accordion title="User roles are not being synced">
+
+**Cause:** Attribute mapping or role mapping is misconfigured.
+
+**Solution:**
+- Verify the **Groups/role attribute** name in Attribute Mapping matches what your IdP actually sends
+- Check that the **IdP group value** in Role Mapping exactly matches the group name (case-sensitive)
+- In your IdP, verify that group claims are included in the SAML assertion
+- For Azure: ensure you added a group claim under User Attributes & Claims
+- For Okta: ensure you configured Group Attribute Statements
+- For Google: ensure you added group membership mapping
+
+</Accordion>
+
+<Accordion title='"Domain already has an SSO provider" error'>
+
+**Cause:** A provider for this domain is already configured.
+
+**Solution:** Delete the existing provider first, then reconfigure. Note that deleting a provider will revoke access for SSO-only users.
+
+</Accordion>
+
+<Accordion title="Users lose access after deleting an SSO provider">
+
+**Expected behavior.** When an SSO provider is deleted:
+- Users who only authenticated via SSO are removed from the workspace
+- Users who also have other sign-in methods (email/password, Google OAuth) retain access
+- The primary account owner is never removed
+
+</Accordion>
+
+<Accordion title="Profile name/picture not updating from IdP">
+
+**Cause:** Attribute mapping may not match your IdP's attribute names.
+
+**Solution:**
+- Check the **Name attribute** and **Picture attribute** in Attribute Mapping
+- Common attribute names by provider:
+  - **Okta:** `displayName`, `profileUrl`
+  - **Azure:** `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name`
+  - **Google:** `name`, `picture`
+  - **OneLogin:** `User.DisplayName`
+
+</Accordion>
+
+<Accordion title="SSO sign-in fails with a SAML error">
+
+**Cause:** Misconfigured ACS URL or Entity ID in your IdP.
+
+**Solution:**
+- Double-check that the **ACS URL** and **Entity ID** in your IdP exactly match the values shown on Yasu's SSO page
+- Ensure the SAML application is active/enabled in your IdP
+- Check that the signing certificate has not expired
+
+</Accordion>
+</AccordionGroup>
