@@ -27,6 +27,7 @@
             "pages": [
               "guides/connect-aws",
               "guides/connect-gcp",
+              "guides/connect-gitlab",
               {
                 "group": "Connect Azure",
                 "icon": "microsoft",

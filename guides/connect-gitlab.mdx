@@ -1,0 +1,155 @@
+---
+title: "GitLab"
+description: "Create a GitLab group access token and connect GitLab to Yasu for bot-authored merge request reviews"
+icon: "gitlab"
+---
+
+Connect **GitLab** to Yasu with a **group access token**. Yasu uses this token to create and maintain project webhooks and to post merge request reviews as the GitLab bot user that GitLab creates for the token.
+
+For GitLab's official reference, see the [GitLab group access token docs](https://docs.gitlab.com/user/group/settings/group_access_tokens/).
+
+## Prerequisites
+
+Before you start, make sure:
+
+- You have the **Owner** role on the GitLab group you want to connect.
+- You know the **GitLab instance URL**:
+  - GitLab.com: `https://gitlab.com`
+  - Self-hosted GitLab: `https://gitlab.your-company.com`
+- Your GitLab plan supports **group access tokens**:
+  - GitLab.com: **Premium** or **Ultimate**
+  - GitLab Self-Managed / Dedicated: **any license**
+
+<Warning>
+GitLab.com **Free** and GitLab.com **trial** do not support group access tokens. If you are on one of those plans, the Yasu GitLab bot connection will not work.
+</Warning>
+
+## What to create in GitLab
+
+Yasu expects a **group access token** with:
+
+- **Role:** `Maintainer`
+- **Scope:** `api`
+
+Why these settings:
+
+- `Maintainer` lets Yasu manage project webhooks and post merge request notes.
+- `api` gives Yasu the API access required to read merge requests, configure hooks, and publish bot-authored comments.
+
+## Steps
+
+<Steps>
+<Step title="Open your GitLab group">
+
+1. Sign in to GitLab.
+2. Open the **group** you want Yasu to manage.
+3. Copy either:
+   - the **group path** such as `yasucloud`, or
+   - the **group ID**
+
+You will enter that value later in Yasu as **Group Path or ID**.
+
+</Step>
+
+<Step title="Create a group access token">
+
+1. In GitLab, open your group.
+2. Go to **Settings** → **Access tokens**.
+3. Click **Add new token**.
+4. Fill in the token:
+   - **Token name:** `Yasu Bot`
+   - **Expiration date:** choose a date that matches your security policy
+   - **Role:** `Maintainer`
+   - **Scope:** `api`
+5. Click **Create group access token**.
+6. Copy the token immediately and store it somewhere safe.
+
+<Note>
+GitLab only shows the token value once. If you lose it, create a new token.
+</Note>
+
+</Step>
+
+<Step title="Connect GitLab in Yasu">
+
+1. In Yasu, go to **Settings** → **Integrations** → **GitLab**.
+2. In **Add Bot Connection**, fill in:
+   - **GitLab Instance URL**
+   - **Display Label** (optional)
+   - **Group Path or ID**
+   - **Bot Access Token**
+3. Click **Add Bot Connection**.
+
+When the token is valid, Yasu stores the connection and loads the repositories available to that group bot.
+
+</Step>
+
+<Step title="Select repositories">
+
+1. In the connected GitLab card, search or browse the repositories in the group.
+2. Click **Add** on the repositories you want Yasu to monitor.
+3. Click **Save Configuration**.
+
+Yasu will create or update the required GitLab project webhooks for those repositories.
+
+</Step>
+
+<Step title="Verify bot-authored reviews">
+
+1. Open or update a merge request in one of the selected repositories.
+2. Wait for the webhook to reach Yasu.
+3. Confirm that the review comment is posted by the **GitLab bot user**, not by a personal account.
+
+</Step>
+</Steps>
+
+## Self-hosted GitLab
+
+For self-hosted GitLab, the setup is the same:
+
+- use your own **instance URL**
+- create the **group access token** in that GitLab instance
+- paste it into Yasu
+
+On GitLab Self-Managed and GitLab Dedicated, group access tokens are available with any license according to GitLab's docs.
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title='I do not see "Access tokens" in my GitLab group'>
+
+Possible causes:
+
+- you are not a **Group Owner**
+- your GitLab.com plan is **Free** or **trial**
+- your top-level group disabled creation of group/project access tokens
+
+Check GitLab's token restrictions here:
+[Group access token restrictions](https://docs.gitlab.com/user/group/settings/group_access_tokens/).
+
+</Accordion>
+
+<Accordion title='Yasu says the token is invalid'>
+
+Check the token settings:
+
+- the token is a **group access token**, not a personal access token
+- the token has the **api** scope
+- the token has not expired or been revoked
+- the **Group Path or ID** matches the group the token belongs to
+
+</Accordion>
+
+<Accordion title='Yasu cannot configure webhooks or reviews do not appear'>
+
+Usually this means the token role is too weak or the selected repositories are outside the connected group.
+
+Use:
+
+- **Role:** `Maintainer`
+- **Scope:** `api`
+
+Then reconnect the group token and save the repository configuration again.
+
+</Accordion>
+</AccordionGroup>
