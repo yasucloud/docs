@@ -8,7 +8,7 @@ Control which files Yasu analyzes in your infrastructure-as-code repositories by
 
 ## Overview
 
-When Yasu's Vesper agent analyzes a pull request, it scans for Terraform files (`.tf` and `.tfvars`) to estimate cost impacts. In some cases, you may want to exclude certain files — for example, development environment overrides, sandbox configurations, or test fixtures that don't represent real infrastructure costs.
+When the Yasu agent analyzes a pull request, it scans for Terraform files (`.tf` and `.tfvars`) to estimate cost impacts. In some cases, you may want to exclude certain files — for example, development environment overrides, sandbox configurations, or test fixtures that don't represent real infrastructure costs.
 
 The `.yasuignore` file works similarly to `.gitignore`: you define glob patterns, and any matching files are skipped during analysis.
 
