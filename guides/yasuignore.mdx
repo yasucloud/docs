@@ -1,0 +1,161 @@
+---
+title: ".yasuignore File"
+description: "Exclude files and directories from Yasu's PR cost analysis using a .yasuignore file"
+icon: "eye-slash"
+---
+
+Control which files Yasu analyzes in your infrastructure-as-code repositories by adding a `.yasuignore` file. This lets you exclude specific Terraform files or directories from cost analysis and PR reports.
+
+## Overview
+
+When the Yasu agent analyzes a pull request, it scans for Terraform files (`.tf` and `.tfvars`) to estimate cost impacts. In some cases, you may want to exclude certain files — for example, development environment overrides, sandbox configurations, or test fixtures that don't represent real infrastructure costs.
+
+The `.yasuignore` file works similarly to `.gitignore`: you define glob patterns, and any matching files are skipped during analysis.
+
+## Setup
+
+<Steps>
+<Step title="Create the file">
+
+Add a `.yasuignore` file to the **root** of your repository:
+
+```bash
+touch .yasuignore
+```
+
+</Step>
+<Step title="Add patterns">
+
+Open the file and add patterns for files or directories you want to exclude:
+
+```text
+# Ignore all .tfvars files
+*.tfvars
+
+# Ignore dev environment
+environments/dev/**
+```
+
+</Step>
+<Step title="Commit and push">
+
+```bash
+git add .yasuignore
+git commit -m "Add .yasuignore to exclude files from cost analysis"
+git push
+```
+
+</Step>
+</Steps>
+
+<Info>
+The `.yasuignore` file only needs to be committed once to your default branch (e.g. `main`). It will automatically apply to all future PR analyses.
+</Info>
+
+## Pattern Syntax
+
+The `.yasuignore` file supports standard glob patterns:
+
+| Pattern | Description |
+|---|---|
+| `*.tfvars` | Ignore all `.tfvars` files in any directory |
+| `backend.tf` | Ignore a specific file by name |
+| `environments/dev/**` | Ignore everything in a directory |
+| `environments/dev/*.tf` | Ignore `.tf` files in a specific directory |
+| `**/test/**` | Ignore files in any `test` directory at any depth |
+| `modules/legacy/**` | Ignore an entire module directory |
+
+### Comments and blank lines
+
+Lines starting with `#` are treated as comments. Blank lines are ignored.
+
+```text
+# This is a comment
+*.tfvars
+
+# Sandbox environments
+sandbox/**
+environments/dev/**
+```
+
+## Examples
+
+### Ignore variable override files
+
+```text
+# Variable overrides often contain dev-specific values
+# that inflate cost estimates
+*.tfvars
+*.tfvars.json
+```
+
+### Ignore non-production environments
+
+```text
+# Only analyze production infrastructure costs
+environments/dev/**
+environments/staging/**
+environments/sandbox/**
+```
+
+### Ignore legacy or deprecated modules
+
+```text
+# These modules are being decommissioned
+modules/legacy-vpc/**
+modules/deprecated-*/**
+```
+
+### Ignore test fixtures
+
+```text
+# Test terraform files used in CI
+**/test/**
+**/tests/**
+**/fixtures/**
+```
+
+## How It Works
+
+When a pull request is opened or updated:
+
+1. Yasu checks for a `.yasuignore` file in the repository
+2. If found, the patterns are parsed and applied to filter out matching files
+3. Filtered files are excluded from:
+   - The PR diff analysis
+   - Infracost cost estimation
+   - The generated cost report posted as a PR comment
+
+<Note>
+Files excluded by `.yasuignore` will not appear in Yasu's PR cost report at all — they are completely skipped from the analysis pipeline.
+</Note>
+
+## Supported Platforms
+
+The `.yasuignore` file works with both supported Git providers:
+
+- **GitHub** — The file is fetched directly via the GitHub API
+- **Bitbucket** — The file is fetched via the Yasu Bitbucket Forge app
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="My .yasuignore file isn't being picked up">
+Ensure the file is:
+- Named exactly `.yasuignore` (note the leading dot)
+- Located at the **root** of the repository (not in a subdirectory)
+- Committed to the repository (not just a local file)
+- Present on the default branch (`main` or `master`)
+</Accordion>
+
+<Accordion title="A pattern isn't matching the files I expect">
+Patterns use glob syntax with `matchBase` enabled, meaning:
+- `*.tfvars` matches `terraform.tfvars` and also `environments/dev/vars.tfvars`
+- For directory-specific matching, use full paths like `environments/dev/*.tf`
+- Use `**` for recursive matching across nested directories
+</Accordion>
+
+<Accordion title="I want to temporarily disable .yasuignore">
+Comment out all patterns with `#` or rename the file. The analysis will process all files as usual when no valid patterns are found.
+</Accordion>
+</AccordionGroup>
