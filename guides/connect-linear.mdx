@@ -1,0 +1,111 @@
+---
+title: "Linear"
+description: "Connect your Linear workspace to export cost-saving insights as Linear issues"
+icon: "/images/integrations/linear.svg"
+---
+
+Connect **Linear** to Yasu to export cost-saving insights directly as Linear issues. Yasu uses OAuth to securely connect to your Linear workspace, letting you push optimization recommendations into your team's existing workflow with one click.
+
+## Prerequisites
+
+Before you start, make sure:
+
+- You have a **Linear workspace** with permission to authorize third-party OAuth apps
+- You have a **team and project** in Linear where issues should be created
+
+## Steps
+
+<Steps>
+<Step title="Navigate to Integrations">
+
+1. Log in to your Yasu dashboard at [app.yasu.cloud](https://app.yasu.cloud)
+2. Go to **Settings** → **Integrations**
+3. Click **Connect** next to Linear
+
+</Step>
+
+<Step title="Authorize Yasu in Linear">
+
+You will be redirected to the Linear OAuth consent screen.
+
+1. Review the requested permissions:
+   - **Read access** to your workspace
+   - **Write access** to your workspace
+2. Click **Authorize**
+3. You will be automatically redirected back to Yasu
+
+<Note>
+Yasu automatically refreshes the OAuth token. You do not need to re-authorize unless you explicitly revoke access in Linear.
+</Note>
+
+</Step>
+
+<Step title="Configure defaults">
+
+After authorization, configure your default export settings:
+
+- **Team** — The Linear team where issues will be created
+- **Project** — The default project for new issues
+- **Priority** — Default issue priority
+- **Assignee** — Default assignee for exported issues
+
+These defaults apply when exporting insights. You can override them per issue.
+
+</Step>
+
+<Step title="Export your first insight">
+
+1. Go to any cost-saving insight in your Yasu dashboard
+2. Click the **Export to Linear** button
+3. Review the issue details and adjust team, project, or assignee if needed
+4. Confirm the export
+
+<Check>
+The issue appears in your Linear team within seconds, linked back to the original insight in Yasu.
+</Check>
+
+</Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="OAuth authorization fails">
+
+**Common causes:**
+
+- Your Linear workspace has restrictions on third-party OAuth apps
+- You do not have permission to authorize apps in the workspace
+
+**Solution:**
+
+Check with your Linear workspace admin to confirm third-party OAuth apps are allowed. If your workspace uses SSO, ensure your session is active before authorizing.
+
+</Accordion>
+
+<Accordion title="Teams or projects are not loading">
+
+**Common causes:**
+
+- The OAuth token has not fully propagated yet
+- The authorized user does not have access to the expected teams
+
+**Solution:**
+
+Refresh the page. If the lists remain empty, disconnect the integration from **Settings** → **Integrations** and reconnect.
+
+</Accordion>
+
+<Accordion title="Exported issues are missing fields">
+
+**Common causes:**
+
+- Default team, project, or priority are not configured
+- The selected assignee is not a member of the target team
+
+**Solution:**
+
+Go to **Settings** → **Integrations** → **Linear** and verify all default fields are set. Ensure the assignee belongs to the selected team.
+
+</Accordion>
+</AccordionGroup>

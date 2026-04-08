@@ -1,0 +1,114 @@
+---
+title: "Bitbucket"
+description: "Install the Yasu Forge app to get AI-powered PR cost analysis on your Bitbucket repositories"
+icon: "bitbucket"
+---
+
+Connect **Bitbucket** to Yasu by installing the Yasu Forge app from the Atlassian Marketplace. Yasu analyzes pull requests for infrastructure cost impact and posts AI-powered review comments.
+
+## Prerequisites
+
+Before you start, make sure:
+
+- You have **Admin** permission on the Bitbucket workspace where you want to install the app
+- At least one repository contains Terraform, Pulumi, or other infrastructure-as-code files
+
+## Steps
+
+<Steps>
+<Step title="Navigate to Integrations">
+
+1. Log in to your Yasu dashboard at [app.yasu.cloud](https://app.yasu.cloud)
+2. Go to **Settings** → **Integrations**
+3. Click **Connect** next to Bitbucket
+
+</Step>
+
+<Step title="Install the Forge app">
+
+A new tab opens to the Atlassian Marketplace Forge install page.
+
+1. Select the **workspace** you want to connect
+2. Click **Install** to add the Yasu Forge app
+3. Return to the Yasu tab when the installation is complete
+
+<Info>
+The Forge app uses Atlassian's webtrigger architecture to securely communicate between Bitbucket and Yasu.
+</Info>
+
+</Step>
+
+<Step title="Link your workspace">
+
+Back in Yasu, the page automatically detects the Forge app installation. When your workspace appears, click **Link Workspace** to complete the connection.
+
+<Note>
+Detection typically takes 10–30 seconds. If it does not appear, click **Open Install Page Again** to verify the app was installed.
+</Note>
+
+</Step>
+
+<Step title="Select repositories">
+
+1. Browse the available repositories in your connected workspace
+2. Click **Add** on the repositories you want Yasu to analyze
+3. Click **Save Configuration**
+
+Yasu will begin monitoring pull requests on the selected repositories.
+
+</Step>
+
+<Step title="Verify PR analysis">
+
+1. Open or update a pull request that modifies infrastructure code in one of the selected repositories
+2. Wait for the Yasu webhook to fire
+3. Confirm the cost analysis comment appears on the PR
+
+<Check>
+PR analysis comments typically appear within **1–2 minutes** of opening or updating a pull request.
+</Check>
+
+</Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Forge app install page does not open">
+
+**Common causes:**
+
+- A popup blocker is preventing the new tab from opening
+- You do not have **Admin** permission on the Bitbucket workspace
+
+**Solution:**
+
+Allow popups for app.yasu.cloud in your browser settings. If you lack permissions, ask a workspace admin to install the app.
+
+</Accordion>
+
+<Accordion title="Yasu does not detect the Forge app">
+
+**Common causes:**
+
+- The app was installed into a different workspace than expected
+- The installation did not complete successfully
+
+**Solution:**
+
+Verify the app is listed in **Bitbucket** → **Workspace settings** → **Installed apps**. If it is not there, click **Connect** in Yasu again to restart the installation flow.
+
+</Accordion>
+
+<Accordion title="PR comments are not appearing">
+
+**What to check:**
+
+1. Verify the repository is selected in Yasu's integration settings
+2. Confirm the pull request modifies infrastructure-as-code files (Terraform, Pulumi, CloudFormation, etc.)
+3. Check that the Forge app is listed as installed in your Bitbucket workspace settings
+
+If the issue persists, disconnect and reconnect the Bitbucket integration from **Settings** → **Integrations**.
+
+</Accordion>
+</AccordionGroup>

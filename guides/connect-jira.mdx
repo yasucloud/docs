@@ -1,0 +1,117 @@
+---
+title: "Jira"
+description: "Export cost-saving insights as Jira issues with one click"
+icon: "jira"
+---
+
+Connect **Jira** to Yasu to export cost-saving insights directly as Jira issues. Yasu uses Atlassian OAuth 2.0 to securely connect to your Jira site, converting insights into well-formatted issues with remote links back to Yasu.
+
+## Prerequisites
+
+Before you start, make sure:
+
+- You have a **Jira Cloud** site with permission to authorize third-party OAuth apps
+- You have a **Jira project** where issues should be created
+
+<Warning>
+Jira Server (on-premise) is not supported. Yasu connects to Jira Cloud only.
+</Warning>
+
+## Steps
+
+<Steps>
+<Step title="Navigate to Integrations">
+
+1. Log in to your Yasu dashboard at [app.yasu.cloud](https://app.yasu.cloud)
+2. Go to **Settings** → **Integrations**
+3. Click **Connect** next to Jira
+
+</Step>
+
+<Step title="Authorize Yasu in Atlassian">
+
+You will be redirected to the Atlassian OAuth consent screen.
+
+1. Review the requested permissions
+2. Click **Accept**
+
+<Info>
+Yasu requests only the scopes needed to create issues and add remote links. It does not access other Atlassian products.
+</Info>
+
+</Step>
+
+<Step title="Select your Jira site">
+
+If you have access to multiple Atlassian sites, select the Jira site you want to connect. You will be automatically redirected back to Yasu.
+
+</Step>
+
+<Step title="Configure defaults">
+
+After authorization, configure your default export settings:
+
+- **Project** — The Jira project where issues will be created
+- **Issue type** — Default issue type (e.g., Task, Story, Bug)
+- **Priority** — Default issue priority
+
+These defaults apply when exporting insights. You can override them per issue.
+
+</Step>
+
+<Step title="Export your first insight">
+
+1. Go to any cost-saving insight in your Yasu dashboard
+2. Click the **Export to Jira** button
+3. Review the issue details and adjust project or issue type if needed
+4. Confirm the export
+
+<Check>
+The issue appears in your Jira project within seconds, formatted in Atlassian Document Format with a remote link back to the insight in Yasu.
+</Check>
+
+</Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="OAuth authorization fails">
+
+**Common causes:**
+
+- Your Atlassian site has admin-level restrictions on third-party OAuth apps
+- You do not have permission to authorize apps on the site
+
+**Solution:**
+
+Check with your Atlassian admin to confirm third-party OAuth apps are allowed. If your site uses SSO, ensure your session is active before authorizing.
+
+</Accordion>
+
+<Accordion title="Jira site not appearing in selection">
+
+**Common causes:**
+
+- You do not have access to any Jira Cloud sites
+- You are trying to connect Jira Server (on-premise), which is not supported
+
+**Solution:**
+
+Verify you have an active Jira Cloud subscription at [admin.atlassian.com](https://admin.atlassian.com). Yasu only supports Jira Cloud.
+
+</Accordion>
+
+<Accordion title="Exported issues have formatting problems">
+
+**Common causes:**
+
+- Complex markdown formatting does not always map perfectly to Atlassian Document Format (ADF)
+- The issue type may not support rich text descriptions
+
+**Solution:**
+
+Use a standard issue type (Task or Story) that supports rich text. If specific formatting is lost, edit the issue description directly in Jira after export.
+
+</Accordion>
+</AccordionGroup>

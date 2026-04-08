@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "willow",
+  "theme": "mint",
   "name": "Yasu Documentation",
   "colors": {
     "primary": "#0043BA",
@@ -34,12 +34,22 @@
             "pages": [
               "guides/connect-aws",
               "guides/connect-gcp",
-              "guides/connect-gitlab",
+              "guides/connect-azure",
               {
-                "group": "Connect Azure",
-                "icon": "microsoft",
+                "group": "Shift-Left",
+                "icon": "code-pull-request",
                 "pages": [
-                  "guides/connect-azure"
+                  "guides/connect-github",
+                  "guides/connect-gitlab",
+                  "guides/connect-bitbucket"
+                ]
+              },
+              {
+                "group": "Issue Tracking",
+                "icon": "ticket",
+                "pages": [
+                  "guides/connect-linear",
+                  "guides/connect-jira"
                 ]
               },
               {

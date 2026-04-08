@@ -1,0 +1,112 @@
+---
+title: "GitHub"
+description: "Install the Yasu GitHub App to get AI-powered PR cost analysis on your repositories"
+icon: "github"
+---
+
+Connect **GitHub** to Yasu by installing the Yasu GitHub App. Yasu analyzes pull requests for infrastructure cost impact and posts AI-powered review comments directly on your PRs.
+
+## Prerequisites
+
+Before you start, make sure:
+
+- You have **Owner** or admin permission on the GitHub organization where you want to install the app
+- At least one repository contains Terraform, Pulumi, or other infrastructure-as-code files
+
+## Steps
+
+<Steps>
+<Step title="Navigate to Integrations">
+
+1. Log in to your Yasu dashboard at [app.yasu.cloud](https://app.yasu.cloud)
+2. Go to **Settings** → **Integrations**
+3. Click **Connect** next to GitHub
+
+</Step>
+
+<Step title="Install the GitHub App">
+
+You will be redirected to the GitHub App installation page.
+
+1. Select the **organization** you want to connect
+2. Choose **All repositories** or select specific repositories
+3. Click **Install**
+
+<Info>
+Yasu requests only the permissions needed to read pull request diffs and post review comments. It does not access your source code beyond PR changes.
+</Info>
+
+</Step>
+
+<Step title="Confirm connection in Yasu">
+
+After installation, you are automatically redirected back to Yasu. The GitHub connection appears with status **Active**.
+
+If the connection does not appear immediately, refresh the page. Yasu detects the installed app automatically.
+
+</Step>
+
+<Step title="Select repositories to monitor">
+
+1. In the connected GitHub card, browse your available repositories
+2. Click **Add** on the repositories you want Yasu to analyze
+3. Click **Save Configuration**
+
+Yasu will begin monitoring pull requests on the selected repositories.
+
+</Step>
+
+<Step title="Verify PR analysis">
+
+1. Open or update a pull request that modifies infrastructure code in one of the selected repositories
+2. Wait for Yasu to analyze the changes
+3. Confirm the cost analysis comment appears on the PR
+
+<Check>
+PR analysis comments typically appear within **1–2 minutes** of opening or updating a pull request.
+</Check>
+
+</Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="GitHub App installation page does not load">
+
+**Common causes:**
+
+- You do not have **Owner** or admin permission on the GitHub organization
+- Your organization has restrictions on third-party GitHub App installations
+
+**Solution:**
+
+Ask an organization owner to install the app, or check **Settings** → **Third-party access** in your GitHub organization to allow the Yasu app.
+
+</Accordion>
+
+<Accordion title="Connection shows as pending after install">
+
+**Common causes:**
+
+- The callback from GitHub has not completed yet
+- A network interruption occurred during the redirect
+
+**Solution:**
+
+Wait 1–2 minutes and refresh the page. If the connection is still pending, uninstall the app from **GitHub** → **Settings** → **Applications** and reinstall it from Yasu.
+
+</Accordion>
+
+<Accordion title="PR comments are not appearing">
+
+**What to check:**
+
+1. Verify the repository is selected in Yasu's integration settings
+2. Confirm the pull request modifies infrastructure-as-code files (Terraform, Pulumi, CloudFormation, etc.)
+3. Check that the GitHub App has read/write permissions on pull requests
+
+If the issue persists, disconnect and reconnect the GitHub integration from **Settings** → **Integrations**.
+
+</Accordion>
+</AccordionGroup>

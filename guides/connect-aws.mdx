@@ -89,20 +89,140 @@ A read-only IAM role that allows Yasu to access your cost and resource data:
 arn:aws:iam::YOUR-ACCOUNT-ID:role/YasuCostOptimizationRole
 ```
 
-### 2. IAM Policy with Read-Only Permissions
+### 2. IAM Policies with Read-Only Permissions
 
-The role includes permissions to read:
+The role includes two policies. The main policy (`YasuCostOptimizationPolicy`) grants read-only access across AWS services:
 
 | Service | Permissions | Purpose |
 |---------|-------------|---------|
-| Cost Explorer | `ce:Get*`, `ce:List*` | Cost and usage data |
-| EC2 | `ec2:Describe*` | Instance, volume, and snapshot info |
-| RDS | `rds:Describe*` | Database instance details |
-| S3 | `s3:List*`, `s3:GetBucket*` | Storage bucket information |
-| Lambda | `lambda:List*`, `lambda:Get*` | Function configurations |
-| CloudWatch | `cloudwatch:GetMetricStatistics` | Utilization metrics |
+| Cost Explorer | `ce:Describe*`, `ce:Get*`, `ce:List*` | Cost and usage data |
+| Compute Optimizer | `compute-optimizer:Describe*`, `compute-optimizer:Get*` | Right-sizing recommendations |
+| EC2 | `ec2:Describe*`, `ec2:List*` | Instance, volume, and snapshot info |
+| RDS | `rds:Describe*`, `rds:List*` | Database instance details |
+| EKS | `eks:Describe*`, `eks:List*` | Kubernetes cluster info |
+| Lambda | `lambda:Get*`, `lambda:List*` | Function configurations |
+| S3 | `s3:GetBucketLocation`, `s3:GetBucketTagging`, `s3:List*` | Storage bucket information |
+| CloudWatch | `cloudwatch:Get*`, `cloudwatch:List*`, `cloudwatch:Describe*` | Utilization metrics |
 | Organizations | `organizations:Describe*`, `organizations:List*` | Account structure |
-| Trusted Advisor | `support:DescribeTrustedAdvisor*` | AWS recommendations |
+| Savings Plans | `savingsplans:Describe*` | Savings plan coverage |
+| Trusted Advisor | `trustedadvisor:Get*`, `trustedadvisor:List*`, `support:*` | AWS recommendations |
+
+A second policy (`YasuCloudWatchMetricsReadOnly`) grants read access to Container Insights logs and Auto Scaling metrics.
+
+<Accordion title="View full IAM policies">
+
+The policies below are from template version `v0.0.1`. For the latest version, see the [CloudFormation template](https://yasu-public.s3.eu-central-1.amazonaws.com/root/yasu-cf-template-v0.0.1.json).
+
+Key statements:
+
+**YasuBillingReadOnly** — Read-only access to billing, cost, and resource data:
+
+```json
+{
+  "Sid": "YasuBillingReadOnly",
+  "Effect": "Allow",
+  "Action": [
+    "application-autoscaling:Describe*",
+    "aws-portal:ViewBilling",
+    "aws-portal:ViewUsage",
+    "budgets:Describe*",
+    "budgets:View*",
+    "ce:Describe*",
+    "ce:Get*",
+    "ce:List*",
+    "cloudwatch:Get*",
+    "cloudwatch:List*",
+    "cloudwatch:Describe*",
+    "cloudfront:GetDistribution",
+    "cloudfront:GetDistributionConfig",
+    "cloudfront:ListDistributions",
+    "cloudfront:ListTagsForResource",
+    "compute-optimizer:Describe*",
+    "compute-optimizer:Get*",
+    "cur:Describe*",
+    "directconnect:Describe*",
+    "ec2:Describe*",
+    "ec2:List*",
+    "ecr:Describe*",
+    "ecr:List*",
+    "eks:Describe*",
+    "eks:List*",
+    "elasticache:List*",
+    "elasticfilesystem:Describe*",
+    "elasticloadbalancing:Describe*",
+    "es:Describe*",
+    "es:List*",
+    "glacier:Describe*",
+    "kafka:Describe*",
+    "kafka:List*",
+    "lambda:Get*",
+    "lambda:List*",
+    "organizations:Describe*",
+    "organizations:List*",
+    "pi:Describe*",
+    "pi:Get*",
+    "pi:List*",
+    "pricing:*",
+    "rds:Describe*",
+    "rds:List*",
+    "redshift:Describe*",
+    "redshift:List*",
+    "route53:Get*",
+    "route53:List*",
+    "s3:GetBucketLocation",
+    "s3:GetBucketTagging",
+    "s3:List*",
+    "sagemaker:Describe*",
+    "sagemaker:List*",
+    "savingsplans:Describe*",
+    "sqs:List*",
+    "ssm:Describe*",
+    "ssm:List*",
+    "support:*",
+    "tag:Get*",
+    "tag:GetResources",
+    "trustedadvisor:Get*",
+    "trustedadvisor:List*"
+  ],
+  "Resource": "*"
+}
+```
+
+**YasuContainerInsightsReadOnly** — Container Insights log access:
+
+```json
+{
+  "Sid": "YasuContainerInsightsReadOnly",
+  "Effect": "Allow",
+  "Action": [
+    "logs:List*",
+    "logs:Describe*",
+    "logs:StartQuery",
+    "logs:StopQuery",
+    "logs:Filter*",
+    "logs:Get*"
+  ],
+  "Resource": "arn:aws:logs:*:*:log-group:/aws/containerinsights/*"
+}
+```
+
+**YasuContainerMetricsAccess** — Auto Scaling and CloudWatch metrics:
+
+```json
+{
+  "Sid": "YasuContainerMetricsAccess",
+  "Effect": "Allow",
+  "Action": [
+    "autoscaling:Describe*",
+    "cloudwatch:Describe*",
+    "cloudwatch:Get*",
+    "cloudwatch:List*"
+  ],
+  "Resource": "*"
+}
+```
+
+</Accordion>
 
 ### 3. Cost and Usage Report (CUR)
 
@@ -111,52 +231,6 @@ An S3 bucket and CUR configuration for detailed billing data:
 - **Bucket**: `yasu-cur-{unique-id}`
 - **Report granularity**: Daily
 - **Format**: Parquet (optimized for analysis)
-
-## Required IAM Permissions
-
-<Accordion title="View Full IAM Policy">
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ce:GetCostAndUsage",
-        "ce:GetDimensionValues",
-        "ce:GetReservationCoverage",
-        "ce:GetReservationPurchaseRecommendation",
-        "ce:GetReservationUtilization",
-        "ce:GetSavingsPlansUtilization",
-        "ce:GetUsageReport",
-        "ce:ListCostCategoryDefinitions",
-        "cur:DescribeReportDefinitions",
-        "organizations:DescribeOrganization",
-        "organizations:ListAccounts",
-        "ec2:DescribeInstances",
-        "ec2:DescribeReservedInstances",
-        "ec2:DescribeSnapshots",
-        "ec2:DescribeVolumes",
-        "ec2:DescribeAddresses",
-        "ec2:DescribeImages",
-        "rds:DescribeDBInstances",
-        "rds:DescribeReservedDBInstances",
-        "lambda:ListFunctions",
-        "lambda:GetFunction",
-        "s3:ListAllMyBuckets",
-        "s3:GetBucketLocation",
-        "cloudwatch:GetMetricStatistics",
-        "support:DescribeTrustedAdvisorChecks",
-        "support:DescribeTrustedAdvisorCheckResult"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-</Accordion>
 
 ## What Yasu Will Scan
 
@@ -252,44 +326,13 @@ If you have multiple AWS accounts (e.g., production, staging, development), you 
 **AWS Organizations:** If you use AWS Organizations, connect the management account first for organization-wide visibility.
 </Tip>
 
-## Security & Compliance
-
-<CardGroup cols={2}>
-<Card title="Read-Only Access" icon="lock">
-  Yasu cannot modify, create, or delete any AWS resources.
-</Card>
-<Card title="Secure Cross-Account" icon="shield">
-  Uses AWS-recommended external ID pattern for secure role assumption.
-</Card>
-<Card title="Data Encryption" icon="key">
-  All data encrypted in transit (TLS 1.2+) and at rest (AES-256).
-</Card>
-<Card title="Audit Trail" icon="clipboard-list">
-  All API calls logged in your AWS CloudTrail.
-</Card>
-</CardGroup>
-
-### Revoking Access
-
-To disconnect Yasu from your AWS account:
-
-1. Go to AWS CloudFormation
-2. Find and delete the `YasuIntegration-*` stack
-3. The IAM role and associated resources will be automatically removed
-
 ## Next Steps
 
 <CardGroup cols={2}>
-<Card title="Explore Dashboard" icon="chart-pie" href="/dashboard">
-  View your cost breakdown and spending trends.
-</Card>
-<Card title="Review Quick Wins" icon="lightbulb" href="/insights">
-  Start implementing AI-powered savings recommendations.
-</Card>
 <Card title="Connect GCP" icon="google" href="/guides/connect-gcp">
   Add your Google Cloud accounts for multi-cloud visibility.
 </Card>
-<Card title="Set Up Alerts" icon="bell" href="/alerts">
-  Configure notifications for cost anomalies.
+<Card title="Connect Azure" icon="microsoft" href="/guides/connect-azure">
+  Add your Microsoft Azure accounts for multi-cloud visibility.
 </Card>
 </CardGroup>

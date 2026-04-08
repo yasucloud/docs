@@ -69,6 +69,27 @@ Connect your cloud accounts and start receiving cost-saving insights right away.
         - Project resource information
         - Compute and storage metrics
       </Tab>
+
+      <Tab title="Azure">
+        **Connect Azure via Service Principal**
+
+        Click **Connect Azure** and follow the step-by-step dialog.
+
+        1. **Create a Service Principal** — Copy the Azure CLI command from the dialog and run it in Azure Cloud Shell
+        2. **Assign roles** — Run the three role assignment commands (Reader, Cost Management Reader, Advisor Reviews Reader)
+        3. **Enter credentials** — Paste your Tenant ID, App ID, and Client Secret into the dialog
+
+        <Info>
+        Yasu uses a **read-only** Service Principal. We cannot modify, create, or delete any Azure resources.
+        </Info>
+
+        The Service Principal is granted:
+        - **Reader** — Read access to subscription resources
+        - **Cost Management Reader** — Access to cost and billing data
+        - **Advisor Reviews Reader** — Access to Azure Advisor recommendations
+
+        For detailed instructions, see the [Azure connection guide](/guides/connect-azure).
+      </Tab>
     </Tabs>
   </Step>
 
