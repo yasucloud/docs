@@ -32,9 +32,15 @@
             "icon": "plug",
             "group": "Integrations",
             "pages": [
-              "guides/connect-aws",
-              "guides/connect-gcp",
-              "guides/connect-azure",
+              {
+                "group": "Providers",
+                "icon": "cloud",
+                "pages": [
+                  "guides/connect-aws",
+                  "guides/connect-gcp",
+                  "guides/connect-azure"
+                ]
+              },
               {
                 "group": "Shift-Left",
                 "icon": "code-pull-request",
