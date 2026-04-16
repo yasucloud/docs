@@ -77,51 +77,61 @@ This opens the Azure connection dialog with step-by-step instructions.
 
 In the dialog, you'll see an Azure CLI command to create a Service Principal:
 
-1. **Copy the command** from the dialog (it will be pre-filled with your account ID)
-2. **Open Azure Cloud Shell** (recommended) or your local terminal with Azure CLI installed
+1. **Copy the command** from the dialog (it is pre-filled with your account ID)
+2. **Open Azure Cloud Shell** or your local terminal with Azure CLI installed
 3. **Paste and run the command**
 
-The command will create a Service Principal named `yasu-cost-optimizer-{your-account-id}` and output:
-- **appId** (Client ID)
-- **password** (Client Secret)
-- **tenant** (Tenant ID)
+The command creates a Service Principal named `yasu-cost-optimizer-{your-account-id}` and returns a JSON output like:
+
+```json
+{
+  "appId": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+  "displayName": "yasu-cost-optimizer-...",
+  "password": "XXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "tenant": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+}
+```
+
+4. **Copy the entire JSON output** and paste it into the text box in the dialog — the credentials will be auto-filled from it
+5. Click **Next**
 
 <Warning>
-**Important:** Save these credentials securely. The client secret will only be shown once.
+**Important:** Save this output securely. The `password` (client secret) is only shown once and cannot be retrieved again.
 </Warning>
 
 </Step>
 
 <Step title="Step 2: Assign Roles">
 
-The dialog shows three role assignment commands. For each subscription you want to connect:
+The dialog will prompt you to enter the subscription ID where your Azure resources are hosted:
 
-1. **Copy each role assignment command** from the dialog
-2. **Replace placeholders**:
-   - Replace `<APP_ID>` with your appId from Step 1
-   - Replace `<SUB_ID>` with your Azure subscription ID
-3. **Run each command** in Azure CLI:
-   - **Reader** - Grants read access to subscription resources
-   - **Cost Management Reader** - Grants access to view cost and billing data
-   - **Advisor Reviews Reader** - Grants access to view Azure Advisor recommendations
+1. **Enter your Azure Subscription ID** in the provided field
+2. The dialog will **automatically regenerate** the three role assignment commands with your subscription ID and App ID filled in
+3. **Copy the commands** for your platform (Bash/Linux/macOS or PowerShell)
+4. **Run the commands** in your Azure terminal and wait for a successful response — they assign the following roles to your Service Principal:
+   - **Reader** — read access to subscription resources
+   - **Cost Management Reader** — access to cost and billing data
+   - **Advisor Reviews Reader** — access to Azure Advisor recommendations
 
 <Note>
-Role assignments may take up to 5 minutes to propagate. Wait a few minutes before testing the connection.
+**Multiple subscriptions:** If your resources span more than one subscription, change the subscription ID in the dialog to your second subscription and run all three commands again. Repeat for each additional subscription.
+</Note>
+
+<Note>
+Role assignments may take up to 5 minutes to propagate. Wait a few minutes before proceeding.
 </Note>
 
 </Step>
 
-<Step title="Step 3: Enter Credentials">
+<Step title="Step 3: Connect">
 
-After completing Steps 1 and 2, enter your credentials in the dialog:
+Your credentials have been **auto-filled** from the JSON output you pasted in Step 1. Review the pre-filled values:
 
-1. **Tenant ID** - The `tenant` value from Step 1
-2. **Service Principal App ID** - The `appId` value from Step 1
-3. **Client Secret** - The `password` value from Step 1
+- **Tenant ID**
+- **Service Principal App ID** (Client ID)
+- **Client Secret**
 
-4. Click **Connect Azure**
-
-The system will validate your credentials and test the connection.
+Click **Connect**. Yasu will validate the connection and, once confirmed, automatically advance to the **Invite Members** step.
 
 </Step>
 
