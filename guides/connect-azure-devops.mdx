@@ -1,0 +1,153 @@
+---
+title: "Azure DevOps"
+description: "Connect Azure DevOps to Yasu with a Personal Access Token so Yasu can post cloud cost-impact analysis on your pull requests"
+icon: "microsoft"
+---
+
+Connect **Azure DevOps** to Yasu with a **Personal Access Token (PAT)**. Yasu uses this token to register pull request webhooks (Service Hooks) on the repositories you select, and to post the cost-impact analysis back to each PR as a comment and a status check.
+
+Comments and the status badge are authored by whichever user owns the PAT, so we recommend creating a dedicated **service-account user** (for example, `Yasu Bot`) rather than using a personal account.
+
+For Microsoft's reference, see the [Azure DevOps personal access tokens docs](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate).
+
+## Prerequisites
+
+Before you start, make sure:
+
+- You use **Azure DevOps Services** (`https://dev.azure.com/your-org`).
+- You can create (or already have) a user with access to the projects whose pull requests you want analyzed.
+- That user can create a **Personal Access Token** in your organization.
+
+<Note>
+By default, comments on your PRs appear under the name of the user who owns the PAT. Using a dedicated service-account user keeps Yasu's comments under a clear bot identity instead of a teammate's name.
+</Note>
+
+## Permissions Yasu requests
+
+Yasu asks for a PAT with the **minimum scopes** needed to analyze pull requests and post results. Create the token with exactly these four scopes:
+
+| Scope | Access | Why Yasu needs it |
+| --- | --- | --- |
+| **Code** | Read | Read the PR diff and the source files to estimate the cost impact of the change |
+| **Code** | Status | Post the "Yasu cost analysis" status check on the pull request |
+| **Pull Request Threads** | Read &amp; write | Post the cost-impact comment and reply to `@yasu` mentions |
+| **Project and Team** | Read | List the projects the user can access so you can pick repositories |
+
+<Info>
+**What this token cannot do.** These scopes are read- and comment-only. A leaked PAT **cannot** push code, delete branches, force-merge or complete pull requests, change repository settings, or modify pipelines — it can only read code, post PR comments, and post the status check.
+</Info>
+
+<Tip>
+If your PAT screen doesn't show **Pull Request Threads** as its own checkbox, expand **Custom defined → Show all scopes**. As a fallback, **Code (Read &amp; write)** plus **Code (Status)** also works.
+</Tip>
+
+## Steps
+
+<Steps>
+<Step title="Create a service-account user (recommended)">
+
+1. In Azure DevOps, open **Organization settings → Users**.
+2. [Add a new user](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/add-organization-users) with a display name like `Yasu Bot`.
+3. Grant it access to the projects whose pull requests you want analyzed.
+
+You can skip this step and use your own account, but PR comments will then appear under your name.
+
+</Step>
+
+<Step title="Create a Personal Access Token">
+
+1. Sign in to Azure DevOps as the user that will own the token.
+2. Click the **user-settings (gear) icon** in the top-right header and choose **Personal access tokens**.
+3. Click **New Token** and set:
+   - **Name:** `Yasu`
+   - **Organization:** the organization you want to connect
+   - **Expiration:** choose a date that matches your security policy
+   - **Scopes:** select the four scopes from [Permissions Yasu requests](#permissions-yasu-requests)
+4. Click **Create**.
+5. Copy the token immediately and store it somewhere safe.
+
+<Warning>
+Azure DevOps shows the token value only once. If you lose it, create a new token.
+</Warning>
+
+</Step>
+
+<Step title="Connect Azure DevOps in Yasu">
+
+1. In Yasu, go to **Integrations → Azure DevOps**.
+2. Enter your **Organization URL** (`https://dev.azure.com/your-org`) and paste the **PAT**.
+3. Click **Validate**, then **Connect**.
+
+Yasu validates the token and lists the projects it can access.
+
+</Step>
+
+<Step title="Select repositories">
+
+1. Choose the projects and repositories you want Yasu to monitor.
+2. Save the configuration.
+
+Yasu registers the required pull request **Service Hooks** on those repositories so new and updated PRs are analyzed automatically.
+
+</Step>
+
+<Step title="Verify a pull request analysis">
+
+1. Open a pull request in one of the selected repositories.
+2. Wait for the webhook to reach Yasu.
+3. Confirm that Yasu posts a **cost-impact comment** and a **status check**, and that the PR appears on the **PR Analysis** page in Yasu.
+
+You can also mention `@yasu` in a PR comment to ask a follow-up question about the change.
+
+</Step>
+</Steps>
+
+## What Yasu does with this access
+
+Once connected, Yasu:
+
+- registers **Service Hooks** for pull request events on the repositories you selected;
+- reads the **PR diff and affected files** to estimate the monthly cloud cost impact of the change;
+- posts a **cost-impact comment** and a **status check** on the PR;
+- responds to **`@yasu` mentions** in PR comments;
+- shows every analyzed PR on the **PR Analysis** page in the Yasu dashboard.
+
+Yasu never pushes code, completes or abandons pull requests, or changes repository or pipeline settings.
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Yasu says the token is invalid">
+
+Check that:
+
+- the **Organization URL** is `https://dev.azure.com/your-org` (not a project or repo URL);
+- the token has **not expired** or been revoked;
+- the token was created for the **same organization** you entered;
+- the token has the four scopes listed above (at minimum **Project and Team → Read** so Yasu can list projects).
+
+</Accordion>
+
+<Accordion title="I connected, but no comment or status appears on my PR">
+
+Usually the token is missing a scope. Confirm:
+
+- **Pull Request Threads → Read &amp; write** (for the comment), and
+- **Code → Status** (for the status check).
+
+If **Pull Request Threads** isn't a separate checkbox, use **Code (Read &amp; write)** plus **Code (Status)**. Recreate the token with the correct scopes, reconnect, and open or update the PR again.
+
+</Accordion>
+
+<Accordion title="Comments appear under a teammate's name">
+
+Comments are authored by the user who owns the PAT. Create a dedicated service-account user (for example `Yasu Bot`), generate the PAT as that user, and reconnect so comments appear under the bot identity.
+
+</Accordion>
+
+<Accordion title="A repository or project is missing from the list">
+
+Yasu can only see projects the token owner can access. Grant the service-account user access to the project in **Organization settings → Users**, then reconnect or refresh the repository list.
+
+</Accordion>
+</AccordionGroup>
