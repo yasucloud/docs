@@ -47,7 +47,8 @@
                 "pages": [
                   "guides/connect-github",
                   "guides/connect-gitlab",
-                  "guides/connect-bitbucket"
+                  "guides/connect-bitbucket",
+                  "guides/connect-azure-devops"
                 ]
               },
               {
