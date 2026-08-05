@@ -106,6 +106,7 @@ The role includes two policies. The main policy (`YasuCostOptimizationPolicy`) g
 | Organizations | `organizations:Describe*`, `organizations:List*` | Account structure |
 | Savings Plans | `savingsplans:Describe*` | Savings plan coverage |
 | Trusted Advisor | `trustedadvisor:Get*`, `trustedadvisor:List*`, `support:*` | AWS recommendations |
+| Cost Optimization Hub | `cost-optimization-hub:Get*`, `cost-optimization-hub:List*` | Consolidated AWS savings recommendations |
 
 A second policy (`YasuCloudWatchMetricsReadOnly`) grants read access to Container Insights logs and Auto Scaling metrics.
 
@@ -139,6 +140,8 @@ Key statements:
     "cloudfront:ListTagsForResource",
     "compute-optimizer:Describe*",
     "compute-optimizer:Get*",
+    "cost-optimization-hub:Get*",
+    "cost-optimization-hub:List*",
     "cur:Describe*",
     "directconnect:Describe*",
     "ec2:Describe*",
@@ -252,6 +255,139 @@ Once connected, Yasu analyzes your AWS environment for optimization opportunitie
 - **Reserved Instance Coverage** — Recommendations for RI purchases
 - **Savings Plans** — Compute and EC2 Savings Plan opportunities
 - **Spot Instance Candidates** — Workloads suitable for Spot pricing
+
+## Cost Optimization Hub Recommendations
+
+Yasu surfaces recommendations from **AWS Cost Optimization Hub (COH)** — AWS's own consolidated recommendation engine. COH brings rightsizing, idle-resource, Reserved Instance, and Savings Plans recommendations across your organization into one place, each with an estimated monthly saving.
+
+<Info>
+COH recommendations are read through the AWS Cost Optimization Hub API. Enabling it does not add to your AWS bill.
+</Info>
+
+Two things must be true for COH recommendations to appear in Yasu:
+
+1. **Cost Optimization Hub is enabled** (opted in) in your AWS account.
+2. The **Yasu IAM role has `cost-optimization-hub` read permissions** — included in the current CloudFormation template.
+
+### Enroll in Cost Optimization Hub
+
+Cost Optimization Hub is an opt-in AWS service. Enable it once from your **management (payer) account** so recommendations cover your whole organization.
+
+<Tabs>
+<Tab title="AWS Console">
+
+1. Open the **AWS Billing and Cost Management** console
+2. In the left navigation, select **Cost Optimization Hub**
+3. Click **Enable Cost Optimization Hub** (or **Get started**)
+4. Confirm the opt-in
+
+</Tab>
+<Tab title="AWS CLI">
+
+```bash
+aws cost-optimization-hub update-enrollment-status \
+  --status Active \
+  --region us-east-1
+```
+
+From your management account, add `--include-member-accounts` to enroll the entire organization:
+
+```bash
+aws cost-optimization-hub update-enrollment-status \
+  --status Active \
+  --include-member-accounts \
+  --region us-east-1
+```
+
+</Tab>
+</Tabs>
+
+<Note>
+Cost Optimization Hub is a global service — its API lives in **us-east-1**, so run the command with `--region us-east-1`. After enrolling, AWS can take up to **24 hours** to generate the first recommendations.
+</Note>
+
+If you're a **new customer**, that's all you need — the CloudFormation template you deployed already grants Yasu the read permission, so COH recommendations appear automatically once AWS has generated them.
+
+## Existing Customers: Add the Cost Optimization Hub Permission
+
+If you connected your AWS account **before August 2026**, your Yasu IAM role was created from an earlier template that did **not** include Cost Optimization Hub permissions. The template has since been updated, so you need to refresh your role once to add:
+
+```
+cost-optimization-hub:Get*
+cost-optimization-hub:List*
+```
+
+<Warning>
+Without these permissions, Yasu cannot read Cost Optimization Hub, and COH recommendations will not appear.
+</Warning>
+
+Choose either option below.
+
+### Option A — Update your CloudFormation stack (recommended)
+
+Update your existing Yasu stack to the latest template. Your parameters and role ARN stay the same; only the permissions change.
+
+<Tabs>
+<Tab title="AWS Console">
+
+1. Open **AWS CloudFormation**
+2. Select your existing Yasu stack (named `yasu-*` or `YasuIntegration-*`)
+3. Click **Update** → **Replace existing template**
+4. Under **Amazon S3 URL**, paste:
+   ```
+   https://yasu-public.s3.eu-central-1.amazonaws.com/root/yasu-cf-template-latest.json
+   ```
+5. Click **Next** through the parameter and options screens — **keep all existing parameter values**
+6. On the review screen, check **I acknowledge that AWS CloudFormation might create IAM resources**
+7. Click **Update stack**
+
+</Tab>
+<Tab title="AWS CLI">
+
+Replace `YOUR-STACK-NAME` with your stack's name (find it in the CloudFormation console):
+
+```bash
+aws cloudformation update-stack \
+  --stack-name YOUR-STACK-NAME \
+  --template-url https://yasu-public.s3.eu-central-1.amazonaws.com/root/yasu-cf-template-latest.json \
+  --parameters \
+      ParameterKey=YasuID,UsePreviousValue=true \
+      ParameterKey=YasuHandshakeID,UsePreviousValue=true \
+      ParameterKey=YasuIamRole,UsePreviousValue=true \
+      ParameterKey=ReportName,UsePreviousValue=true \
+      ParameterKey=BucketName,UsePreviousValue=true \
+      ParameterKey=YasuPingbackArn,UsePreviousValue=true \
+      ParameterKey=TemplateVersion,UsePreviousValue=true \
+      ParameterKey=TemplateUrl,UsePreviousValue=true \
+  --capabilities CAPABILITY_IAM \
+  --region us-east-1
+```
+
+</Tab>
+</Tabs>
+
+The update completes in **1–2 minutes**, ending in status **UPDATE_COMPLETE**. Nothing else in your account changes — the role keeps the same ARN, and Yasu stays connected throughout.
+
+### Option B — Add the permission manually
+
+If you'd rather not update the stack, add the two actions to the role's policy directly:
+
+1. Open **IAM → Roles** and find `YasuCostOptimizationRole-*`
+2. Open the attached **YasuCostOptimizationPolicy-*** policy and click **Edit**
+3. Add these two actions to the `Action` list:
+   ```json
+   "cost-optimization-hub:Get*",
+   "cost-optimization-hub:List*"
+   ```
+4. Click **Save changes**
+
+<Note>
+A manual edit is overwritten the next time the CloudFormation stack updates. Option A keeps your role in sync with the template going forward.
+</Note>
+
+### Then enroll in COH
+
+Adding the permission lets Yasu **read** Cost Optimization Hub, but AWS only generates recommendations once COH is **enabled**. If you haven't already, [enroll in Cost Optimization Hub](#enroll-in-cost-optimization-hub) as described above.
 
 ## Data Sync Schedule
 
