@@ -52,6 +52,7 @@ Before connecting your Azure account, ensure you have:
 
 - **Administrative access** to your Azure subscription (or permissions to create Service Principals and assign RBAC roles)
 - **Subscription Owner or User Access Administrator** role to assign permissions
+- If you plan to assign roles at a **management group**: permission to assign roles at that management group scope
 - Access to Azure Portal or Azure CLI
 - PowerShell or Azure CLI installed (for automated setup)
 
@@ -103,22 +104,51 @@ The command creates a Service Principal named `yasu-cost-optimizer-{your-account
 
 <Step title="Step 2: Assign Roles">
 
-The dialog will prompt you to enter the subscription ID where your Azure resources are hosted:
+The dialog asks **where the roles should be assigned**. Pick the option that matches your estate:
 
-1. **Enter your Azure Subscription ID** in the provided field
-2. The dialog will **automatically regenerate** the three role assignment commands with your subscription ID and App ID filled in
-3. **Copy the commands** for your platform (Bash/Linux/macOS or PowerShell)
-4. **Run the commands** in your Azure terminal and wait for a successful response — they assign the following roles to your Service Principal:
-   - **Reader** — read access to subscription resources
-   - **Cost Management Reader** — access to cost and billing data
-   - **Advisor Reviews Reader** — access to Azure Advisor recommendations
+<Tabs>
+<Tab title="One subscription">
+
+1. Select **One subscription**
+2. **Enter your Azure Subscription ID** in the provided field
+3. The dialog **automatically regenerates** the three role assignment commands with your subscription ID and App ID filled in
+4. **Copy the commands** for your platform (Bash/Linux/macOS or PowerShell)
+5. **Run the commands** in your Azure terminal and wait for a successful response
 
 <Note>
-**Multiple subscriptions:** If your resources span more than one subscription, change the subscription ID in the dialog to your second subscription and run all three commands again. Repeat for each additional subscription.
+**More than one subscription?** Change the subscription ID in the dialog and run all three commands again for each additional subscription. If you have more than a handful, use the **management group** option instead — it covers them all at once.
 </Note>
 
+</Tab>
+<Tab title="A management group">
+
+Use this when your subscriptions sit under a management group. Azure RBAC inherits down the hierarchy, so assigning the roles **once** at a management group grants the same access on every subscription beneath it — including subscriptions you add later.
+
+1. Select **A management group**
+2. **Enter your Management Group ID** — the ID, not the display name
+3. **Copy and run the regenerated commands** for your platform
+
+You don't need to list your subscriptions anywhere. Yasu discovers them from the Service Principal when you connect, so every subscription under the group is picked up automatically, and new ones are picked up as they're added.
+
+<Warning>
+**Use a child management group, not the Tenant Root Group.** Assigning roles at tenant root requires Global Administrator elevation, which most organizations restrict for good reason.
+</Warning>
+
 <Note>
-Role assignments may take up to 5 minutes to propagate. Wait a few minutes before proceeding.
+If your subscriptions are spread across several management groups, run the commands once per group — or move them under a single parent group first.
+</Note>
+
+</Tab>
+</Tabs>
+
+Whichever scope you choose, the commands assign these roles to your Service Principal:
+
+- **Reader** — read access to subscription resources
+- **Cost Management Reader** — access to cost and billing data
+- **Advisor Reviews Reader** — access to Azure Advisor recommendations
+
+<Note>
+Role assignments may take up to 5 minutes to propagate. Management group assignments can take a little longer to reach a newly added subscription.
 </Note>
 
 </Step>
@@ -195,7 +225,7 @@ If you prefer to set up the Service Principal manually through the Azure Portal:
 
 <Step title="Assign RBAC Roles">
 
-The Service Principal needs the following roles at the **Subscription** scope:
+The Service Principal needs the following roles at the **Subscription** scope — or at a **Management group** scope, which inherits them to every subscription beneath it:
 
 1. Navigate to **Subscriptions** → Select your subscription
 2. Go to **Access control (IAM)** → **+ Add** → **Add role assignment**
@@ -210,8 +240,12 @@ The Service Principal needs the following roles at the **Subscription** scope:
    **Role 2: Cost Management Reader**
    - Repeat the process with **Cost Management Reader** role
 
-   **Role 3: Monitoring Reader**
-   - Repeat the process with **Monitoring Reader** role
+   **Role 3: Advisor Reviews Reader**
+   - Repeat the process with **Advisor Reviews Reader** role
+
+<Tip>
+**Managing many subscriptions?** Assign the same three roles once at a management group instead: **Azure Portal** → **Management groups** → select your group → **Access control (IAM)** → **+ Add** → **Add role assignment**. Use a child management group rather than the Tenant Root Group.
+</Tip>
 
 <Note>
 Role assignments may take up to 5 minutes to propagate. Wait a few minutes before testing the connection.
@@ -234,13 +268,17 @@ Role assignments may take up to 5 minutes to propagate. Wait a few minutes befor
 
 ## What the Service Principal Needs
 
-The Service Principal is granted the following **read-only** RBAC roles at the subscription scope:
+The Service Principal is granted the following **read-only** RBAC roles, assigned either at the subscription scope or at a management group scope:
 
 | Role | Purpose | Permissions |
 |------|---------|-------------|
 | **Reader** | Read all Azure resources | `*/read` |
 | **Cost Management Reader** | Access cost and billing data | `Microsoft.Consumption/*/read`, `Microsoft.CostManagement/*/read` |
 | **Advisor Reviews Reader** | Access Azure Advisor recommendations | `Microsoft.Advisor/*/read` |
+
+<Info>
+**How Yasu decides what to scan:** Yasu enumerates subscriptions from the Service Principal itself rather than from a list you maintain. It scans every subscription the Service Principal can reach, whether that access was granted directly or inherited from a management group, and re-checks daily so subscriptions added later are picked up without any action from you.
+</Info>
 
 ## Troubleshooting
 
@@ -275,7 +313,7 @@ az ad app credential reset --id {client-id}
 
 1. **Missing role assignments** - Verify all three roles are assigned (Reader, Cost Management Reader, Advisor Reviews Reader)
 2. **Role propagation delay** - Azure role assignments can take up to 5 minutes to propagate
-3. **Wrong scope** - Ensure roles are assigned at the Subscription level, not Resource Group level
+3. **Wrong scope** - Ensure roles are assigned at the Subscription or Management group level, not at a Resource Group
 
 **Solution:**
 
@@ -296,26 +334,36 @@ az role assignment create \
 
 <Accordion title="Subscription not found">
 
+Yasu enumerates subscriptions from the Service Principal, so a subscription is missing because the Service Principal cannot reach it — not because of the ID you typed into the dialog. That ID is only used to build the role assignment commands.
+
 **What to check:**
 
-1. **Wrong subscription ID** - Verify the subscription ID is correct
-2. **Service Principal not granted access** - The SP needs Reader role at subscription scope
+1. **Service Principal not granted access** - The SP needs the Reader role at the subscription scope, or at a management group above it
+2. **Role propagation delay** - Assignments can take up to 5 minutes, and longer to reach a subscription that was just moved into a management group
 3. **Subscription disabled** - Check subscription state in Azure Portal
 
 **Solution:**
 
 ```powershell
-# List available subscriptions
+# See exactly which subscriptions the Service Principal can reach
+az login --service-principal \
+  --username {client-id} \
+  --password {client-secret} \
+  --tenant {tenant-id}
+
 az account list --output table
 
-# Verify subscription exists and is enabled
-az account show --subscription {subscription-id}
-
-# Grant access to subscription
+# Grant access to a single subscription
 az role assignment create \
   --assignee {client-id} \
   --role "Reader" \
   --scope "/subscriptions/{subscription-id}"
+
+# ...or to every subscription under a management group
+az role assignment create \
+  --assignee {client-id} \
+  --role "Reader" \
+  --scope "/providers/Microsoft.Management/managementGroups/{management-group-id}"
 ```
 
 </Accordion>

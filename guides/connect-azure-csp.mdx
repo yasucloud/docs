@@ -79,12 +79,21 @@ For each customer subscription you want Yasu to access:
 4. Assign the following roles to your Service Principal:
    - **Reader**
    - **Cost Management Reader**
-   - **Monitoring Reader**
+   - **Advisor Reviews Reader**
 5. Repeat for each customer subscription
 
-<Warning>
-**Important:** You must assign roles for each customer subscription individually. Consider using Azure Management Groups if you have many subscriptions.
-</Warning>
+<Tip>
+**Many customer subscriptions?** Assign the same three roles once at a **management group** that contains them. Azure RBAC inherits down the hierarchy, so every subscription beneath the group is covered — including ones added later — and Yasu discovers them from the Service Principal automatically.
+
+```bash
+az role assignment create \
+  --assignee "{client-id}" \
+  --role "Reader" \
+  --scope "/providers/Microsoft.Management/managementGroups/{management-group-id}"
+```
+
+Use a child management group rather than the Tenant Root Group, which requires Global Administrator elevation.
+</Tip>
 
 </Step>
 
@@ -180,8 +189,8 @@ After connecting, Yasu will perform the following checks:
 **What it means:** The Service Principal may not have roles assigned to customer subscriptions.
 
 **Fix:**
-1. Verify RBAC roles (Reader, Cost Management Reader, Monitoring Reader) are assigned
-2. Ensure roles are assigned at the Subscription level (not Resource Group)
+1. Verify RBAC roles (Reader, Cost Management Reader, Advisor Reviews Reader) are assigned
+2. Ensure roles are assigned at the Subscription or Management group level (not Resource Group)
 3. Check that you're assigning roles in the correct customer subscription
 4. Wait 5 minutes for role assignments to propagate
 
