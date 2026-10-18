@@ -37,12 +37,14 @@ You'll be redirected to AWS CloudFormation with our template pre-loaded.
 
 1. **Review the stack name** — A unique name is generated for you (e.g., `YasuIntegration-abc123`)
 2. **Review the parameters** — These are automatically filled in:
-   - `YasuCustomerId` — Your unique Yasu customer ID
-   - `YasuExternalId` — A secure token for cross-account access
+   - `YasuID` — Your unique Yasu customer ID
+   - `YasuHandshakeID` — A secure external ID for cross-account access
+   - `YasuIamRole` — The Yasu IAM role allowed to assume the role in your account
    - `BucketName` — S3 bucket for Cost and Usage Reports
    - `ReportName` — Name for your AWS CUR report
+   - `TemplateVersion` — Version of the template (currently `v0.0.2`)
 3. **Scroll to the bottom** and check the acknowledgment box:
-   > ☑️ I acknowledge that AWS CloudFormation might create IAM resources.
+   > ☑️ I acknowledge that AWS CloudFormation might create IAM resources with custom names.
 4. Click **Create stack**
 
 <Warning>
@@ -86,12 +88,14 @@ Our template creates the following resources in your AWS account:
 A read-only IAM role that allows Yasu to access your cost and resource data:
 
 ```
-arn:aws:iam::YOUR-ACCOUNT-ID:role/YasuCostOptimizationRole
+arn:aws:iam::YOUR-ACCOUNT-ID:role/YasuCostOptimizationRole-YOUR-YASU-ID
 ```
+
+The role can only be assumed by Yasu's IAM role, and only with your account's unique external ID.
 
 ### 2. IAM Policies with Read-Only Permissions
 
-The role includes two policies. The main policy (`YasuCostOptimizationPolicy`) grants read-only access across AWS services:
+The role has the AWS-managed `ViewOnlyAccess` policy plus three inline policies. The main policy (`YasuCostOptimizationPolicy`) grants read-only access across AWS services:
 
 | Service | Permissions | Purpose |
 |---------|-------------|---------|
@@ -105,123 +109,236 @@ The role includes two policies. The main policy (`YasuCostOptimizationPolicy`) g
 | CloudWatch | `cloudwatch:Get*`, `cloudwatch:List*`, `cloudwatch:Describe*` | Utilization metrics |
 | Organizations | `organizations:Describe*`, `organizations:List*` | Account structure |
 | Savings Plans | `savingsplans:Describe*` | Savings plan coverage |
-| Trusted Advisor | `trustedadvisor:Get*`, `trustedadvisor:List*`, `support:*` | AWS recommendations |
+| Pricing | `pricing:Get*`, `pricing:Describe*`, `pricing:List*` | Public AWS list prices |
+| Trusted Advisor | `trustedadvisor:Get*`, `trustedadvisor:List*`, `support:DescribeTrustedAdvisorChecks`, `support:DescribeTrustedAdvisorCheckResult`, `support:DescribeTrustedAdvisorCheckSummaries`, `support:DescribeTrustedAdvisorCheckRefreshStatuses` | AWS recommendations |
 | Cost Optimization Hub | `cost-optimization-hub:Get*`, `cost-optimization-hub:List*` | Consolidated AWS savings recommendations |
+| Member accounts (management account only) | `sts:AssumeRole` on `YasuCostOptimizationRole-YOUR-YASU-ID` | Read the same Yasu role in your member accounts |
 
-A second policy (`YasuCloudWatchMetricsReadOnly`) grants read access to Container Insights logs and Auto Scaling metrics.
+The same policy also contains **explicit Deny** statements. An explicit Deny overrides any Allow, including `ViewOnlyAccess`, so Yasu can never read the contents of your data stores:
+
+| Denied action | Scope |
+|---------------|-------|
+| `secretsmanager:GetSecretValue` | All resources |
+| `kms:Decrypt` | All resources |
+| `ssm:GetParameter*` | All resources |
+| `dynamodb:GetItem`, `dynamodb:Query`, `dynamodb:Scan` | All resources |
+| `s3:GetObject` | Every bucket except the Yasu Cost and Usage Report bucket created by this template |
+
+A second policy (`YasuCloudWatchMetricsReadOnly`) grants read access to Container Insights logs and Auto Scaling metrics. A third policy (`ObjectGetCostandUsageReports`) lets the role read the Cost and Usage Report files in the bucket the template creates.
+
+None of the policies grant any action that creates, changes or deletes a resource.
 
 <Accordion title="View full IAM policies">
 
-The policies below are from template version `v0.0.1`. For the latest version, see the [CloudFormation template](https://yasu-public.s3.eu-central-1.amazonaws.com/root/yasu-cf-template-v0.0.1.json).
+The policies below are copied from template version `v0.0.2`: the [CloudFormation template](https://yasu-public.s3.eu-central-1.amazonaws.com/root/yasu-cf-template-v0.0.2.json) for your management (payer) or standalone account, and the [member account template](https://yasu-public.s3.eu-central-1.amazonaws.com/member/yasu-member-cf-template-v0.0.2.json). `${YasuID}` and `${BucketName}` are filled in from your stack parameters.
 
-Key statements:
-
-**YasuBillingReadOnly** — Read-only access to billing, cost, and resource data:
+**YasuCostOptimizationPolicy**
 
 ```json
 {
-  "Sid": "YasuBillingReadOnly",
-  "Effect": "Allow",
-  "Action": [
-    "application-autoscaling:Describe*",
-    "aws-portal:ViewBilling",
-    "aws-portal:ViewUsage",
-    "budgets:Describe*",
-    "budgets:View*",
-    "ce:Describe*",
-    "ce:Get*",
-    "ce:List*",
-    "cloudwatch:Get*",
-    "cloudwatch:List*",
-    "cloudwatch:Describe*",
-    "cloudfront:GetDistribution",
-    "cloudfront:GetDistributionConfig",
-    "cloudfront:ListDistributions",
-    "cloudfront:ListTagsForResource",
-    "compute-optimizer:Describe*",
-    "compute-optimizer:Get*",
-    "cost-optimization-hub:Get*",
-    "cost-optimization-hub:List*",
-    "cur:Describe*",
-    "directconnect:Describe*",
-    "ec2:Describe*",
-    "ec2:List*",
-    "ecr:Describe*",
-    "ecr:List*",
-    "eks:Describe*",
-    "eks:List*",
-    "elasticache:List*",
-    "elasticfilesystem:Describe*",
-    "elasticloadbalancing:Describe*",
-    "es:Describe*",
-    "es:List*",
-    "glacier:Describe*",
-    "kafka:Describe*",
-    "kafka:List*",
-    "lambda:Get*",
-    "lambda:List*",
-    "organizations:Describe*",
-    "organizations:List*",
-    "pi:Describe*",
-    "pi:Get*",
-    "pi:List*",
-    "pricing:*",
-    "rds:Describe*",
-    "rds:List*",
-    "redshift:Describe*",
-    "redshift:List*",
-    "route53:Get*",
-    "route53:List*",
-    "s3:GetBucketLocation",
-    "s3:GetBucketTagging",
-    "s3:List*",
-    "sagemaker:Describe*",
-    "sagemaker:List*",
-    "savingsplans:Describe*",
-    "sqs:List*",
-    "ssm:Describe*",
-    "ssm:List*",
-    "support:*",
-    "tag:Get*",
-    "tag:GetResources",
-    "trustedadvisor:Get*",
-    "trustedadvisor:List*"
-  ],
-  "Resource": "*"
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "YasuBillingReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "application-autoscaling:Describe*",
+        "aws-portal:ViewBilling",
+        "aws-portal:ViewUsage",
+        "budgets:Describe*",
+        "budgets:View*",
+        "ce:Describe*",
+        "ce:Get*",
+        "ce:List*",
+        "cloudwatch:Get*",
+        "cloudwatch:List*",
+        "cloudwatch:Describe*",
+        "cloudfront:GetDistribution",
+        "cloudfront:GetDistributionConfig",
+        "cloudfront:GetInvalidation",
+        "cloudfront:ListDistributions",
+        "cloudfront:ListInvalidations",
+        "cloudfront:ListTagsForResource",
+        "compute-optimizer:Describe*",
+        "compute-optimizer:Get*",
+        "cost-optimization-hub:Get*",
+        "cost-optimization-hub:List*",
+        "cur:Describe*",
+        "directconnect:Describe*",
+        "ec2:Describe*",
+        "ec2:List*",
+        "ecr:Describe*",
+        "ecr:List*",
+        "eks:Describe*",
+        "eks:List*",
+        "elasticache:List*",
+        "elasticfilesystem:Describe*",
+        "elasticloadbalancing:Describe*",
+        "es:Describe*",
+        "es:List*",
+        "glacier:Describe*",
+        "kafka:Describe*",
+        "kafka:List*",
+        "lambda:Get*",
+        "lambda:List*",
+        "license-manager:List*",
+        "mediaconnect:Describe*",
+        "mediaconnect:List*",
+        "mediaconvert:List*",
+        "medialive:Describe*",
+        "medialive:List*",
+        "mediapackage:Describe*",
+        "mediapackage:List*",
+        "mediapackage-vod:Describe*",
+        "mediapackage-vod:List*",
+        "mediastore:Describe*",
+        "mediastore:List*",
+        "mediatailor:Describe*",
+        "mediatailor:List*",
+        "mq:Describe*",
+        "mq:List*",
+        "organizations:Describe*",
+        "organizations:List*",
+        "pi:Describe*",
+        "pi:Get*",
+        "pi:List*",
+        "pricing:Get*",
+        "pricing:Describe*",
+        "pricing:List*",
+        "rds:List*",
+        "redshift:Describe*",
+        "redshift:List*",
+        "resource-groups:Get*",
+        "resource-groups:List*",
+        "resource-groups:Search*",
+        "route53:Get*",
+        "route53:List*",
+        "route53domains:Check*",
+        "route53domains:Get*",
+        "route53domains:View*",
+        "sagemaker:Describe*",
+        "sagemaker:List*",
+        "s3:GetBucketLocation",
+        "s3:GetBucketTagging",
+        "s3:List*",
+        "savingsplans:Describe*",
+        "secretsmanager:Describe*",
+        "secretsmanager:List*",
+        "ses:Describe*",
+        "shield:Describe*",
+        "sqs:List*",
+        "ssm:Describe*",
+        "ssm:List*",
+        "storagegateway:Describe*",
+        "storagegateway:List*",
+        "support:DescribeTrustedAdvisorChecks",
+        "support:DescribeTrustedAdvisorCheckResult",
+        "support:DescribeTrustedAdvisorCheckSummaries",
+        "support:DescribeTrustedAdvisorCheckRefreshStatuses",
+        "tag:Get*",
+        "tag:GetResources",
+        "transfer:Describe*",
+        "transfer:List*",
+        "trustedadvisor:Get*",
+        "trustedadvisor:List*",
+        "rds:Describe*",
+        "s3:GetReplicationConfiguration",
+        "backup:ListBackupPlans",
+        "backup:GetBackupPlan",
+        "backup:ListBackupSelections",
+        "elasticache:Describe*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "YasuAssumeMemberRoles",
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::*:role/YasuCostOptimizationRole-${YasuID}"
+    },
+    {
+      "Sid": "YasuDenyDataPlaneReads",
+      "Effect": "Deny",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "kms:Decrypt",
+        "ssm:GetParameter*",
+        "dynamodb:GetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "YasuDenyObjectReadsOutsideCurBucket",
+      "Effect": "Deny",
+      "Action": "s3:GetObject",
+      "NotResource": "arn:aws:s3:::${BucketName}/*"
+    }
+  ]
 }
 ```
 
-**YasuContainerInsightsReadOnly** — Container Insights log access:
+In the member account template, `YasuAssumeMemberRoles` is not present, and there is no Cost and Usage Report bucket, so `s3:GetObject` is denied on all resources as part of `YasuDenyDataPlaneReads`.
+
+**YasuCloudWatchMetricsReadOnly**
 
 ```json
 {
-  "Sid": "YasuContainerInsightsReadOnly",
-  "Effect": "Allow",
-  "Action": [
-    "logs:List*",
-    "logs:Describe*",
-    "logs:StartQuery",
-    "logs:StopQuery",
-    "logs:Filter*",
-    "logs:Get*"
-  ],
-  "Resource": "arn:aws:logs:*:*:log-group:/aws/containerinsights/*"
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "YasuContainerInsightsReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "logs:List*",
+        "logs:Describe*",
+        "logs:StartQuery",
+        "logs:StopQuery",
+        "logs:Filter*",
+        "logs:Get*"
+      ],
+      "Resource": "arn:aws:logs:*:*:log-group:/aws/containerinsights/*"
+    },
+    {
+      "Sid": "YasuContainerInsightsLogStream",
+      "Effect": "Allow",
+      "Action": [
+        "logs:GetQueryResults",
+        "logs:DescribeLogGroups"
+      ],
+      "Resource": "arn:aws:logs:*:*:log-group::log-stream:*"
+    },
+    {
+      "Sid": "YasuContainerMetricsAccess",
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:Describe*",
+        "cloudwatch:Describe*",
+        "cloudwatch:Get*",
+        "cloudwatch:List*"
+      ],
+      "Resource": "*"
+    }
+  ]
 }
 ```
 
-**YasuContainerMetricsAccess** — Auto Scaling and CloudWatch metrics:
+**ObjectGetCostandUsageReports** (management or standalone account only)
 
 ```json
 {
-  "Sid": "YasuContainerMetricsAccess",
-  "Effect": "Allow",
-  "Action": [
-    "autoscaling:Describe*",
-    "cloudwatch:Describe*",
-    "cloudwatch:Get*",
-    "cloudwatch:List*"
-  ],
-  "Resource": "*"
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectAcl"
+      ],
+      "Resource": "arn:aws:s3:::${BucketName}/*"
+    }
+  ]
 }
 ```
 
@@ -229,11 +346,11 @@ Key statements:
 
 ### 3. Cost and Usage Report (CUR)
 
-An S3 bucket and CUR configuration for detailed billing data:
+An S3 bucket and CUR configuration for detailed billing data (management or standalone account only):
 
-- **Bucket**: `yasu-cur-{unique-id}`
-- **Report granularity**: Daily
-- **Format**: Parquet (optimized for analysis)
+- **Bucket**: the `BucketName` stack parameter, private with all public access blocked; objects expire after 200 days
+- **Report granularity**: Hourly, including resource IDs
+- **Format**: CSV, GZIP-compressed
 
 ## What Yasu Will Scan
 
@@ -308,24 +425,18 @@ Cost Optimization Hub is a global service — its API lives in **us-east-1**, so
 
 If you're a **new customer**, that's all you need — the CloudFormation template you deployed already grants Yasu the read permission, so COH recommendations appear automatically once AWS has generated them.
 
-## Existing Customers: Add the Cost Optimization Hub Permission
+## Existing Customers: Update to the Latest Template
 
-If you connected your AWS account **before August 2026**, your Yasu IAM role was created from an earlier template that did **not** include Cost Optimization Hub permissions. The template has since been updated, so you need to refresh your role once to add:
+If you connected your AWS account before template `v0.0.2`, update your Yasu IAM role once to pick up these changes:
 
-```
-cost-optimization-hub:Get*
-cost-optimization-hub:List*
-```
-
-<Warning>
-Without these permissions, Yasu cannot read Cost Optimization Hub, and COH recommendations will not appear.
-</Warning>
+- **Cost Optimization Hub** read permissions (`cost-optimization-hub:Get*`, `cost-optimization-hub:List*`). Without them, COH recommendations will not appear in Yasu.
+- **Strictly read-only access.** `support:*` is replaced by the four Trusted Advisor read actions, `pricing:*` is replaced by `pricing:Get*`, `pricing:Describe*` and `pricing:List*`, and the explicit Deny statements for data-plane reads are added. See [IAM Policies with Read-Only Permissions](#2-iam-policies-with-read-only-permissions).
 
 Choose either option below.
 
 ### Option A — Update your CloudFormation stack (recommended)
 
-Update your existing Yasu stack to the latest template. Your parameters and role ARN stay the same; only the permissions change.
+Update your existing Yasu stack to the latest template. Your role ARN stays the same; only the permissions and the reported template version change.
 
 <Tabs>
 <Tab title="AWS Console">
@@ -337,9 +448,16 @@ Update your existing Yasu stack to the latest template. Your parameters and role
    ```
    https://yasu-public.s3.eu-central-1.amazonaws.com/root/yasu-cf-template-latest.json
    ```
-5. Click **Next** through the parameter and options screens — **keep all existing parameter values**
-6. On the review screen, check **I acknowledge that AWS CloudFormation might create IAM resources**
-7. Click **Update stack**
+5. On the parameters screen, set **TemplateVersion** to `v0.0.2` and keep every other parameter value as it is
+6. Click **Next** through the options screen
+7. On the review screen, check **I acknowledge that AWS CloudFormation might create IAM resources with custom names**
+8. Click **Update stack**
+
+For a **member account** stack, use this template URL instead:
+
+```
+https://yasu-public.s3.eu-central-1.amazonaws.com/member/yasu-member-cf-template-v0.0.2.json
+```
 
 </Tab>
 <Tab title="AWS CLI">
@@ -357,28 +475,27 @@ aws cloudformation update-stack \
       ParameterKey=ReportName,UsePreviousValue=true \
       ParameterKey=BucketName,UsePreviousValue=true \
       ParameterKey=YasuPingbackArn,UsePreviousValue=true \
-      ParameterKey=TemplateVersion,UsePreviousValue=true \
-      ParameterKey=TemplateUrl,UsePreviousValue=true \
-  --capabilities CAPABILITY_IAM \
+      ParameterKey=YasuCURExportNotificationTopicArn,UsePreviousValue=true \
+      ParameterKey=TemplateVersion,ParameterValue=v0.0.2 \
+      ParameterKey=TemplateUrl,ParameterValue=https://yasu-public.s3.eu-central-1.amazonaws.com/root/yasu-cf-template-v0.0.2.json \
+  --capabilities CAPABILITY_NAMED_IAM \
   --region us-east-1
 ```
+
+The template names its IAM role, so AWS requires `CAPABILITY_NAMED_IAM`. With `CAPABILITY_IAM` the update fails with `InsufficientCapabilities`.
 
 </Tab>
 </Tabs>
 
 The update completes in **1–2 minutes**, ending in status **UPDATE_COMPLETE**. Nothing else in your account changes — the role keeps the same ARN, and Yasu stays connected throughout.
 
-### Option B — Add the permission manually
+### Option B — Edit the policy manually
 
-If you'd rather not update the stack, add the two actions to the role's policy directly:
+If you'd rather not update the stack, replace the role's policy directly:
 
 1. Open **IAM → Roles** and find `YasuCostOptimizationRole-*`
 2. Open the attached **YasuCostOptimizationPolicy-*** policy and click **Edit**
-3. Add these two actions to the `Action` list:
-   ```json
-   "cost-optimization-hub:Get*",
-   "cost-optimization-hub:List*"
-   ```
+3. Replace the JSON with the full `YasuCostOptimizationPolicy` from [View full IAM policies](#2-iam-policies-with-read-only-permissions), with `${YasuID}` and `${BucketName}` replaced by your stack's parameter values
 4. Click **Save changes**
 
 <Note>
@@ -431,7 +548,7 @@ Adding the permission lets Yasu **read** Cost Optimization Hub, but AWS only gen
 
 1. **Cost Explorer is enabled** — Go to AWS Billing → Cost Explorer → Enable
 2. **Sufficient history** — Cost Explorer needs ~24 hours to populate after first enable
-3. **IAM permissions** — Verify the role has `ce:*` permissions
+3. **IAM permissions** — Verify the role has `ce:Describe*`, `ce:Get*` and `ce:List*` permissions
 
 **Solution:** Enable Cost Explorer if needed, then wait 24 hours for data to populate.
 
