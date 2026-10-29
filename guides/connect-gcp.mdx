@@ -107,13 +107,12 @@ Grant these roles on the project that hosts your billing export (the project ID 
    - ✅ **Browser** (`roles/browser`) - Read access to browse the project hierarchy
    - ✅ **Storage Object Viewer** (`roles/storage.objectViewer`) - For storage scanning (not included in Viewer)
    - ✅ **BigQuery Data Viewer** (`roles/bigquery.dataViewer`) - For reading the billing export and BigQuery scanning
-   - ✅ **BigQuery Job User** (`roles/bigquery.jobUser`) - For running BigQuery billing queries (not included in Viewer)
 6. Click **"SAVE"**
 
 Or grant the same roles with `gcloud` (replace `PROJECT_ID`):
 
 ```bash
-for ROLE in roles/viewer roles/browser roles/storage.objectViewer roles/bigquery.dataViewer roles/bigquery.jobUser; do
+for ROLE in roles/viewer roles/browser roles/storage.objectViewer roles/bigquery.dataViewer; do
   gcloud projects add-iam-policy-binding PROJECT_ID \
     --member="serviceAccount:yasu-connector@yasu-437610.iam.gserviceaccount.com" \
     --role="$ROLE"
@@ -122,6 +121,8 @@ done
 
 <Note>
 You don't need to grant Recommender Viewer, Compute Viewer, Cloud SQL Viewer, Kubernetes Engine Viewer, or Monitoring Viewer separately. The permissions Yasu uses from those roles are already included in **Viewer**.
+
+**BigQuery Job User** (`roles/bigquery.jobUser`) is also optional: Viewer on the billing export project already lets Yasu run billing queries there. Grant it only if you don't grant Viewer on that project.
 </Note>
 
 #### Organization-Level Permissions (for org scope only)
@@ -166,7 +167,7 @@ In the console: **Billing** → select the billing account → **Account managem
 
 <Step title="Grant BigQuery dataset permissions">
 
-Yasu verifies BigQuery access on the **project** that hosts the billing export, so the project-level **BigQuery Data Viewer** and **BigQuery Job User** roles from the previous step are required. Sharing only the dataset is not enough to pass the connection check.
+Yasu verifies BigQuery access on the **project** that hosts the billing export, so the project-level **BigQuery Data Viewer** and **Viewer** roles from the previous step are required (Viewer covers running the billing queries). Sharing only the dataset is not enough to pass the connection check.
 
 If your organization restricts project-level BigQuery access, you can additionally share the billing dataset directly:
 
@@ -248,7 +249,7 @@ Your projects must meet these requirements before connecting:
 4. **Step 3 — Connect**: Copy Yasu's service account email, use **Open IAM Console** to confirm the roles from the steps above are granted, then click **Connect**.
 
 After you connect, Yasu automatically verifies:
-- Service account has the required project-level permissions on the billing export project (Viewer, Storage Object Viewer, BigQuery Data Viewer, BigQuery Job User)
+- Service account has the required project-level permissions on the billing export project (Viewer, Storage Object Viewer, BigQuery Data Viewer)
 - For organization scope: organization-level permissions (Browser, Organization Viewer) and the project-level permissions on each project in the organization
 
 </Step>
@@ -308,7 +309,7 @@ After connecting, Yasu will perform the following checks:
 
 **Fix:**
 1. Check that the **BigQuery Dataset Id** you entered is `project-id.dataset_name` and that the dataset contains a `gcp_billing_export_...` table
-2. In **IAM & Admin** → **IAM** for that project, make sure `yasu-connector@yasu-437610.iam.gserviceaccount.com` has **BigQuery Data Viewer** and **BigQuery Job User**
+2. In **IAM & Admin** → **IAM** for that project, make sure `yasu-connector@yasu-437610.iam.gserviceaccount.com` has **BigQuery Data Viewer** and **Viewer** (if Viewer isn't granted on that project, add **BigQuery Job User** so Yasu can run billing queries)
 3. Try connecting again
 
 </Accordion>
