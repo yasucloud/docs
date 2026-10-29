@@ -34,6 +34,23 @@ flowchart TD
     BA -- "BigQuery export" --> P1
 ```
 
+## Permissions you need to set this up
+
+These are the roles **your own Google account** needs to complete the setup. They are separate from the read-only roles you grant to Yasu's service account. One person may not have all of them; often the billing export is enabled by a finance or billing admin and the IAM grants by a platform or security admin.
+
+| Task | Role you need | Where |
+|------|---------------|-------|
+| Enable the billing export (Standard and Detailed) | **Billing Account Administrator** (`roles/billing.admin`) or **Billing Account Costs Manager** (`roles/billing.costsManager`) | On the **billing account** |
+| Create the BigQuery dataset for the export | **BigQuery User** (`roles/bigquery.user`) or **BigQuery Admin** | On the project that will hold the dataset |
+| Enable APIs | **Service Usage Admin** (`roles/serviceusage.serviceUsageAdmin`), or Owner/Editor | On each project |
+| Grant Yasu's roles, **project scope** | **Project IAM Admin** (`roles/resourcemanager.projectIamAdmin`), or Owner | On the project |
+| Grant Yasu's roles, **organization scope** | **Organization Administrator** (`roles/resourcemanager.organizationAdmin`) or **Security Admin** (`roles/iam.securityAdmin`) | On the **organization** |
+| Grant Billing Account Viewer to Yasu (optional) | **Billing Account Administrator** (`roles/billing.admin`) | On the **billing account** |
+
+<Note>
+Project owners and organization admins often **don't** have a role on the billing account. Without one, the **Billing export** page is missing from the Billing menu, or you only see a limited, project-level billing view ("you have limited access to view billing data for the project listed below"). Ask the person who manages your billing account to grant you **Billing Account Costs Manager** or to enable the export for you.
+</Note>
+
 ## Steps to Connect
 
 <Steps>
@@ -51,6 +68,10 @@ Before starting the connection process, make sure you have the following informa
   - Format: `project-id.dataset_name` (for example `my-billing-project.billing_export`)
   - The part before the dot is the **project ID** (not the project number) of the project that hosts the billing export. Yasu reads the project from this value, so there is no separate Project ID field.
 
+**Choosing a scope:**
+- **Project scope** connects one project: the project in your **BigQuery Dataset ID**. If your billing export lives in a separate billing or admin project, project scope only scans that project, not your workloads. Use organization scope in that case.
+- **Organization scope** connects every project in your organization, including projects created later.
+
 **Required for Organization scope only:**
 - **Organization ID** - Numeric ID of your GCP organization
   - Format: `123456789012`
@@ -65,7 +86,43 @@ Before starting the connection process, make sure you have the following informa
 
 <Step title="Export billing data to BigQuery">
 
-GCP works with BigQuery to update its price logging every few times a day. To set this up, see the following documentation:
+Yasu reads your costs from the Cloud Billing export in BigQuery. **Enable both the Standard usage cost and the Detailed usage cost exports, into the same dataset.** Yasu uses both tables:
+
+| Export | Table GCP creates | What Yasu uses it for |
+|--------|-------------------|------------------------|
+| **Standard usage cost** | `gcp_billing_export_v1_<BILLING_ACCOUNT_ID>` | Daily cost sync used for insights and analysis |
+| **Detailed usage cost** | `gcp_billing_export_resource_v1_<BILLING_ACCOUNT_ID>` | Current spend on the dashboard, and service, project and label breakdowns |
+
+<Warning>
+If either export is missing, part of Yasu shows **no data**. For example, with only the Standard export the dashboard shows a current spend of **0**. The connection check does not catch this, so make sure both exports are **Enabled** before you connect.
+</Warning>
+
+You don't need the **Pricing**, **FOCUS usage cost**, or **Committed Use Discounts** exports.
+
+**If you already export billing data**, check the BigQuery export page (below) and make sure both **Standard usage cost** and **Detailed usage cost** show **Enabled** and point to the same dataset. You can also list the tables in the dataset:
+
+```bash
+bq ls PROJECT_ID:DATASET_NAME
+```
+
+You should see both a `gcp_billing_export_v1_...` and a `gcp_billing_export_resource_v1_...` table.
+
+**To set up the export:**
+
+1. **Choose a project** to hold the billing data. A dedicated billing or admin project is a good choice. It must be linked to the billing account.
+2. **Enable the APIs** on that project:
+   ```bash
+   gcloud services enable bigquery.googleapis.com bigquerydatatransfer.googleapis.com --project=PROJECT_ID
+   ```
+3. **Create a dataset**, for example `billing_export`. Pick the location carefully: it can't be changed later. Multi-region `EU` or `US` are the safe choices for the Detailed export.
+   ```bash
+   bq --location=EU mk --dataset PROJECT_ID:billing_export
+   ```
+4. Open the export page: **Billing** → select your billing account → **Billing export** → **BigQuery export** tab. You can also go there directly: `https://console.cloud.google.com/billing/<BILLING_ACCOUNT_ID>/export/bigquery`
+5. Under **Standard usage cost**, click **Edit settings** (or **Enable standard export**), choose the project and dataset, and click **Save**.
+6. Under **Detailed usage cost**, do the same with the **same project and dataset**.
+
+The export page itself has no `gcloud` command; it can only be changed in the console. You need **Billing Account Administrator** or **Billing Account Costs Manager** on the billing account (see [Permissions you need](#permissions-you-need-to-set-this-up)).
 
 <Card
   title="Export Cloud Billing data to BigQuery"
@@ -75,12 +132,10 @@ GCP works with BigQuery to update its price logging every few times a day. To se
   Official Google Cloud documentation
 </Card>
 
-Or navigate to the [Google Cloud Console Billing page](https://console.cloud.google.com/billing/) and click on **Billing export**. On this page, you can enable the exporting.
-
-Either the **Standard usage cost** or the **Detailed usage cost** export works. Yasu looks for the export table GCP creates in your dataset (named `gcp_billing_export_...`).
-
 <Note>
-Make sure billing export is enabled before proceeding to the next steps, as Yasu requires access to BigQuery billing data. It can take a few hours after enabling the export before the first table appears in the dataset.
+- It can take a few hours after enabling the export before the first tables appear in the dataset.
+- Google updates the export several times a day, so the latest day's costs can lag by several hours.
+- The export starts collecting from when you enable it. **Don't expect a full cost history**: Google doesn't backfill your past costs. Enable the export as early as possible.
 </Note>
 
 </Step>
@@ -150,6 +205,42 @@ done
 <Note>
 For organization scope, you still need the project-level roles above on **each project** you want scanned. The simplest way is to grant them once at the organization (or folder) level with `gcloud organizations add-iam-policy-binding` so every project inherits them through [IAM policy inheritance](https://cloud.google.com/iam/docs/granting-changing-revoking-access).
 </Note>
+
+To grant all organization-scope roles in one go (replace `ORGANIZATION_ID`; find it with `gcloud organizations list`):
+
+```bash
+for ROLE in roles/viewer roles/browser roles/storage.objectViewer roles/bigquery.dataViewer roles/resourcemanager.organizationViewer; do
+  gcloud organizations add-iam-policy-binding ORGANIZATION_ID \
+    --member="serviceAccount:yasu-connector@yasu-437610.iam.gserviceaccount.com" \
+    --role="$ROLE"
+done
+```
+
+#### Grant with Terraform
+
+The same grants as Terraform, for organization scope:
+
+```hcl
+locals {
+  yasu_sa = "serviceAccount:yasu-connector@yasu-437610.iam.gserviceaccount.com"
+  yasu_roles = [
+    "roles/viewer",
+    "roles/browser",
+    "roles/storage.objectViewer",
+    "roles/bigquery.dataViewer",
+    "roles/resourcemanager.organizationViewer",
+  ]
+}
+
+resource "google_organization_iam_member" "yasu" {
+  for_each = toset(local.yasu_roles)
+  org_id   = var.org_id
+  role     = each.value
+  member   = local.yasu_sa
+}
+```
+
+For project scope, use `google_project_iam_member` with `project = var.project_id` and leave out `roles/resourcemanager.organizationViewer`. Use the `_iam_member` resources, not `_iam_policy`, so your existing IAM bindings are left untouched.
 
 #### Billing Account Permissions (optional)
 
@@ -308,9 +399,39 @@ After connecting, Yasu will perform the following checks:
 **What it means:** Yasu's service account can't access your BigQuery billing dataset.
 
 **Fix:**
-1. Check that the **BigQuery Dataset Id** you entered is `project-id.dataset_name` and that the dataset contains a `gcp_billing_export_...` table
+1. Check that the **BigQuery Dataset Id** you entered is `project-id.dataset_name` and that the dataset contains the `gcp_billing_export_v1_...` and `gcp_billing_export_resource_v1_...` tables
 2. In **IAM & Admin** → **IAM** for that project, make sure `yasu-connector@yasu-437610.iam.gserviceaccount.com` has **BigQuery Data Viewer** and **Viewer** (if Viewer isn't granted on that project, add **BigQuery Job User** so Yasu can run billing queries)
 3. Try connecting again
+
+</Accordion>
+
+<Accordion title='Issue: Current spend shows 0'>
+
+**What it means:** Yasu is connected, but it can't find the billing export tables it reads costs from.
+
+**Fix:**
+1. On **Billing** → **Billing export** → **BigQuery export**, check that both **Standard usage cost** and **Detailed usage cost** show **Enabled**.
+2. Check that both point to the dataset you entered as **BigQuery Dataset Id** in Yasu.
+3. Run `bq ls PROJECT_ID:DATASET_NAME` and confirm the dataset has both a `gcp_billing_export_v1_...` and a `gcp_billing_export_resource_v1_...` table.
+4. If you just enabled an export, wait a few hours for the first rows to arrive.
+
+</Accordion>
+
+<Accordion title="Issue: I can't find the Billing export page">
+
+**What it means:** Your account doesn't have a role on the billing account. You may only see a limited, project-level billing view.
+
+**Fix:**
+- Ask your billing account administrator to grant you **Billing Account Costs Manager** (`roles/billing.costsManager`) or **Billing Account Administrator** on the billing account, or to enable the export for you.
+- If your Google Cloud is invoiced by a partner (reseller) rather than by Google, the partner may need to enable the export.
+
+</Accordion>
+
+<Accordion title='Issue: "One or more users named in the policy do not belong to a permitted customer"'>
+
+**What it means:** Your organization has the **Domain restricted sharing** org policy (`iam.allowedPolicyMemberDomains`), which blocks granting roles to accounts outside your organization, including Yasu's service account.
+
+**Fix:** An organization policy administrator adds Yasu's Google customer ID to the policy's allowed values, or sets an exception on the project or organization you connect. Contact Yasu support for the customer ID.
 
 </Accordion>
 
